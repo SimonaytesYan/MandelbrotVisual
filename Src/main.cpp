@@ -245,7 +245,6 @@ void DrawMandelbrotV3(sf::Image* image)
                 
         }
     }
-
 }
 
 //======================VERSION 4=====================
@@ -255,9 +254,9 @@ void DrawMandelbrotSSE(sf::Image* image)
     for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
     {
         float x0 = kLeftAreaBoder;
-        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x+=4, x0 += 4*kDeltaX)
+        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x += 4, x0 += 4*kDeltaX)
         {
-            __m128 X0 = _mm_set_ps(x0, x0 + kDeltaX, x0 + kDeltaX*2, x0 + kDeltaX*3);
+            __m128 X0 = _mm_set_ps(x0 + kDeltaX*3, x0 + kDeltaX*2, x0 + kDeltaX, x0);
             __m128 Y0 = _mm_set_ps1(y0);
             __m128 X  = X0;
             __m128 Y  = Y0;
@@ -272,14 +271,14 @@ void DrawMandelbrotSSE(sf::Image* image)
 
                 __m128 radius_2 = _mm_add_ps(XX, YY);
 
-                __m128 cmp = _mm_cmple_ps(radius_2, kRadius2m128);
+                __m128 cmp = _mm_cmpge_ps(kRadius2m128, radius_2);
                 if (!_mm_movemask_ps(cmp))
                     break;
                     
                 steps = _mm_sub_epi32(steps, _mm_castps_si128(cmp));
                     
-                X = _mm_sub_ps(_mm_add_ps(X0, XX), YY);
-                Y = _mm_add_ps(_mm_add_ps(Y0, XY), XY);
+                X = _mm_add_ps(_mm_sub_ps(XX, YY), X0);
+                Y = _mm_add_ps(_mm_add_ps(XY, XY), Y0);
             }
 
             int* step_int = (int*)&steps;
