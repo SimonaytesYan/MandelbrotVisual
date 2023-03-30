@@ -1,16 +1,18 @@
 #include <stdlib.h>
 #include <SFML/Graphics.hpp>
 #include <emmintrin.h>
+#include <immintrin.h>
 
 #include "Libs/Stopwatch.h"
 
 #define DRAW
+//#define DEBUG
 
 //===============================MANDELBROT CONSTS==============================
-const float  kLeftAreaBoder    = -2;
+const float  kLeftAreaBoder   = -2;
 const float  kBottomAreaBoder = -1.5;
-const float  kRightAreaBoder   = 1;
-const float  kUpAreaBoder      = 1.5;
+const float  kRightAreaBoder  = 1;
+const float  kUpAreaBoder     = 1.5;
 
 const size_t kIterationNumber = 800;
 
@@ -22,6 +24,7 @@ const float  kDeltaY        = kDrawAreaY/kIterationNumber;
 const size_t kMaxIterations = 256;
 const size_t kRadius2       = 100;
 const __m128 kRadius2m128   = _mm_set_ps1(kRadius2);
+const __m512 kRadius2m512   = _mm512_set1_ps(kRadius2);
 
 //==============================WINDOW CONSTS===================================
 const size_t kWindowHeight   = 800;
@@ -30,14 +33,18 @@ const size_t kMaxFpsStrLen   = 20;
 const char   kWindowHeader[] = "Mandelbrot set";
 
 //==============================OTHER CONSTS====================================
-const float _3210[4] = {0, 1, 2, 3};
+const float   _3210[4] = {0, 1, 2, 3};
+const __m512  _151413  = _mm512_set_ps(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+const __m512i _1_m512  = _mm512_set1_epi32(1);
 
 //==============================FUNCTIONS PROTOTIPE===============================
 void UpdateFpsViewer(sf::Text *fps_counter, float fps);
 void DrawMandelbrotSSE(sf::Image* image);
+void DrawMandelbrotAVX512(sf::Image* image);
 void DrawMandelbrotV1(sf::Image* image);
 void DrawMandelbrotV2(sf::Image* image);
 void DrawMandelbrotV3(sf::Image* image);
+
 
 //==============================FOR WRAPERS======================================
 inline void mm_set_ps1(float* A, const float  elem) {for(int i = 0; i < 4; i++) A[i] = elem;}
@@ -68,7 +75,7 @@ int main()
     while (window.isOpen())
     {
         StartTimer();
-        DrawMandelbrotSSE(&image);
+        DrawMandelbrotAVX512(&image);
         StopTimer();
 
         #ifdef DRAW
@@ -284,6 +291,69 @@ void DrawMandelbrotSSE(sf::Image* image)
             int* step_int = (int*)&steps;
             for (int i = 0; i < 4; i++)
             {
+                if (step_int[i])
+                    image->setPixel(pixel_x + i, pixel_y, sf::Color((step_int[i]*10)%256, step_int[i], step_int[i]));
+            }           
+        }
+    }
+}
+
+//======================VERSION 5=====================
+void DrawMandelbrotAVX512(sf::Image* image)
+{
+    float y0 = kBottomAreaBoder;
+    for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
+    {
+        float x0 = kLeftAreaBoder;
+        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x += 16, x0 += 16*kDeltaX)
+        {
+            __m512 X0 = _mm512_add_ps(_mm512_set1_ps(x0), _mm512_mul_ps(_151413, _mm512_set1_ps(kDeltaX)));
+
+            __m512 Y0 = _mm512_set1_ps(y0);
+            __m512 X  = X0;
+            __m512 Y  = Y0;
+
+            #ifdef DEBUG
+                printf("%lg %lg\n", x0, y0);
+                    int kdf = 0;
+                    scanf("%c", &kdf);
+            #endif
+                
+            __m512i steps = _mm512_setzero_si512();
+            for (int n = 0; n < kMaxIterations; n++)
+            {
+                __m512 XX = _mm512_mul_ps(X, X);
+                __m512 YY = _mm512_mul_ps(Y, Y);
+                __m512 XY = _mm512_mul_ps(X, Y);
+
+                __m512 radius_2 = _mm512_add_ps(XX, YY);
+
+                __mmask16 cmp = _mm512_cmp_ps_mask(radius_2, kRadius2m512, _CMP_LE_OS);
+                
+                steps = _mm512_add_epi32(steps, _mm512_maskz_mov_epi32(cmp, _1_m512));
+
+                #ifdef DEBUG
+                    for (int i = 0; i < 16; i++)
+                    {
+                        printf("x[i]y[i] = (%lg %lg)\n", ((float*)&X)[i], ((float*)&Y)[i]);
+                        //printf("r[%d]    = %lg\n", i, ((float*)&radius_2)[i]);
+                    }
+                    printf("cmp = %x\n\n", cmp);
+                #endif
+
+                if (cmp == 0)
+                    break;
+                    
+                X = _mm512_add_ps(_mm512_sub_ps(XX, YY), X0);
+                Y = _mm512_add_ps(_mm512_add_ps(XY, XY), Y0);
+            }
+
+            int* step_int = (int*)&steps;
+            for (int i = 0; i < 16; i++)
+            {
+                #ifdef DEBUG
+                    printf("step[%d] = %d\n", i, step_int[i]);
+                #endif
                 if (step_int[i])
                     image->setPixel(pixel_x + i, pixel_y, sf::Color((step_int[i]*10)%256, step_int[i], step_int[i]));
             }           
