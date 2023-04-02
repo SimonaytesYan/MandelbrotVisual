@@ -8,37 +8,20 @@
 #define DRAW
 //#define DEBUG
 
-//===============================MANDELBROT CONSTS==============================
-const float  kLeftAreaBoder   = -2;
-const float  kBottomAreaBoder = -1.5;
-const float  kRightAreaBoder  = 1;
-const float  kUpAreaBoder     = 1.5;
-
-const size_t kIterationNumber = 800;
-
-const float  kDrawAreaX     = kRightAreaBoder - kLeftAreaBoder;
-const float  kDrawAreaY     = kUpAreaBoder - kBottomAreaBoder;
-const float  kDeltaX        = kDrawAreaX/kIterationNumber;
-const float  kDeltaY        = kDrawAreaY/kIterationNumber;
-
-const size_t kMaxIterations = 256;
-const size_t kRadius2       = 100;
-const __m128 kRadius2m128   = _mm_set_ps1(kRadius2);
-const __m512 kRadius2m512   = _mm512_set1_ps(kRadius2);
-
 //==============================WINDOW CONSTS===================================
-const size_t kWindowHeight   = 800;
-const size_t kWindowWidth    = 800;
 const size_t kMaxFpsStrLen   = 20;
 const char   kWindowHeader[] = "Mandelbrot set";
 
 //==============================OTHER CONSTS====================================
-const float   _3210[4] = {0, 1, 2, 3};
-const __m512  _151413  = _mm512_set_ps(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
-const __m512i _1_m512  = _mm512_set1_epi32(1);
+const float   kMovingSpeed = 0.1;
+const float   _3210[4]     = {0, 1, 2, 3};
+const __m512  _151413      = _mm512_set_ps(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+const __m512i _1_m512      = _mm512_set1_epi32(1);
 
 //==============================FUNCTIONS PROTOTIPE===============================
-static void UpdateFpsViewer(sf::Text *fps_counter, float fps);
+static        void  ProcessSetMoving();
+static        void  UpdateFpsViewer(sf::Text *fps_counter, float fps);
+static inline float GetDelta(float to, float from, size_t steps);
 
 //==============================FOR WRAPERS======================================
 static inline void mm_set_ps1(float* A, const float  elem) {for(int i = 0; i < 4; i++) A[i] = elem;}
@@ -47,12 +30,12 @@ static inline void mm_add_ps (float* A, const float* B)    {for(int i = 0; i < 4
 static inline void mm_sub_ps (float* A, const float* B)    {for(int i = 0; i < 4; i++) A[i] = A[i] - B[i];}
 static inline void mm_mov_ps (float* A, const float* B)    {for(int i = 0; i < 4; i++) A[i] = B[i];}
 
-void DrawMandelbrotSet()
+void DrawMandelbrotSet(MandelbrotParams params)
 {
-    sf::RenderWindow window(sf::VideoMode(kWindowWidth, kWindowHeight), kWindowHeader, sf::Style::Default);
+    sf::RenderWindow window(sf::VideoMode(params.image_width, params.image_height), kWindowHeader, sf::Style::Default);
 
     sf::Image image;
-    image.create(kWindowWidth, kWindowHeight, sf::Color::Black);
+    image.create(params.image_width, params.image_height, sf::Color::Black);
 
     sf::Texture image_texture;
     sf::Sprite  drawble;
@@ -69,15 +52,29 @@ void DrawMandelbrotSet()
     while (window.isOpen())
     {
         StartTimer();
-        ConstructMandelbrotAVX512(&image);
+        ConstructMandelbrotAVX512(&image, &params);
         StopTimer();
 
         #ifdef DRAW
             sf::Event event;
             while (window.pollEvent(event))
             {
-                if (event.type == sf::Event::Closed)
-                    window.close();
+                switch (event.type)
+                {
+                    case sf::Event::Closed:
+                    {
+                        window.close();
+                        break;
+                    }
+                    case sf::Event::KeyPressed:
+                    {
+                       ProcessSetMoving();
+                       break;
+                    }
+
+                    default:
+                        break;
+                }
             }
             UpdateFpsViewer(&fps_counter, ((1/(float)(GetTimerMicroseconds())) * 1000000));
 
@@ -95,13 +92,16 @@ void DrawMandelbrotSet()
 }
 
 //======================VERSION 1=====================
-void ConstructMandelbrotV1(sf::Image* image)
+void ConstructMandelbrotV1(sf::Image* image, MandelbrotParams* params)
 {
-    float x0 = kLeftAreaBoder;
-    for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x++, x0 += kDeltaX)
+    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+
+    float x0 = params->set_border.LeftBoder;
+    for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x++, x0 += kDeltaX)
     {
-        float y0 = kBottomAreaBoder;
-        for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
+        float y0 = params->set_border.BottomBoder;
+        for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
         {
             float X = x0;
             float Y = y0;
@@ -109,9 +109,9 @@ void ConstructMandelbrotV1(sf::Image* image)
             bool draw_pixel = true;
 
             int i = 0;
-            for (i = 0; i < kMaxIterations; i++)
+            for (i = 0; i < params->iterations; i++)
             {
-                if (kRadius2 < X*X + Y*Y)
+                if (params->radius_2 < X*X + Y*Y)
                 {
                     draw_pixel = false;
                     break;
@@ -131,13 +131,16 @@ void ConstructMandelbrotV1(sf::Image* image)
 }
 
 //======================VERSION 2=====================
-void ConstructMandelbrotV2(sf::Image* image)
+void ConstructMandelbrotV2(sf::Image* image, MandelbrotParams* params)
 {
-    float y0 = kBottomAreaBoder;
-    for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
+    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+
+    float y0 = params->set_border.BottomBoder;
+    for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = kLeftAreaBoder;
-        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x+=4, x0 += 4*kDeltaX)
+        float x0 = params->set_border.LeftBoder;
+        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x+=4, x0 += 4*kDeltaX)
         {
             float X0[4] = {x0, x0 + kDeltaX, x0 + kDeltaX*2, x0 + kDeltaX*3};
             float Y0[4] = {y0, y0, y0, y0};
@@ -147,7 +150,7 @@ void ConstructMandelbrotV2(sf::Image* image)
             int draw_pixel = 0b1111;
 
             int steps[4] = {};
-            for (int n = 0; n < kMaxIterations; n++)
+            for (int n = 0; n < params->iterations; n++)
             {
                 float XX[4] = {};   for (int i = 0; i < 4; i++) XX[i] = X[i]*X[i];
                 float YY[4] = {};   for (int i = 0; i < 4; i++) YY[i] = Y[i]*Y[i];
@@ -155,7 +158,7 @@ void ConstructMandelbrotV2(sf::Image* image)
 
                 for(int i = 0; i < 4; i++)
                 {
-                    if ((draw_pixel & (1 << i)) && kRadius2 < XX[i] + YY[i])
+                    if ((draw_pixel & (1 << i)) && params->radius_2 < XX[i] + YY[i])
                     {
                         steps[i] = n;
                         draw_pixel |= 1 << i;
@@ -179,14 +182,16 @@ void ConstructMandelbrotV2(sf::Image* image)
 }
 
 //======================VERSION 3=====================
-void ConstructMandelbrotV3(sf::Image* image)
+void ConstructMandelbrotV3(sf::Image* image, MandelbrotParams* params)
 {
+    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
 
-    float y0 = kBottomAreaBoder;
-    for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
+    float y0 = params->set_border.BottomBoder;
+    for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = kLeftAreaBoder;
-        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x+=4, x0 += 4*kDeltaX)
+        float x0 = params->set_border.LeftBoder;
+        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x+=4, x0 += 4*kDeltaX)
         {
             float X0[4] = {};
             mm_set_ps1(X0, kDeltaX);
@@ -206,7 +211,7 @@ void ConstructMandelbrotV3(sf::Image* image)
 
             int N[4] = {};
             int n = 0;
-            for (n = 0; n < kMaxIterations; n++)
+            for (n = 0; n < params->iterations; n++)
             {
                 float XX[4] = {};
                 mm_mov_ps(XX, X);
@@ -220,7 +225,7 @@ void ConstructMandelbrotV3(sf::Image* image)
 
                 for(int i = 0; i < 4; i++)
                 {
-                    if ((draw_pixel & (1 << i)) && kRadius2 < XX[i] + YY[i])
+                    if ((draw_pixel & (1 << i)) && params->radius_2 < XX[i] + YY[i])
                     {
                         N[i] = n;
                         draw_pixel |= 1 << i;
@@ -249,13 +254,17 @@ void ConstructMandelbrotV3(sf::Image* image)
 }
 
 //======================VERSION 4=====================
-void ConstructMandelbrotSSE(sf::Image* image)
+void ConstructMandelbrotSSE(sf::Image* image, MandelbrotParams* params)
 {
-    float y0 = kBottomAreaBoder;
-    for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
+    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const __m128 radius_2m128 = _mm_set1_ps(params->radius_2);
+
+    float y0 = params->set_border.BottomBoder;
+    for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = kLeftAreaBoder;
-        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x += 4, x0 += 4*kDeltaX)
+        float x0 = params->set_border.LeftBoder;
+        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += 4, x0 += 4*kDeltaX)
         {
             __m128 X0 = _mm_set_ps(x0 + kDeltaX*3, x0 + kDeltaX*2, x0 + kDeltaX, x0);
             __m128 Y0 = _mm_set_ps1(y0);
@@ -264,7 +273,7 @@ void ConstructMandelbrotSSE(sf::Image* image)
                 
             __m128i steps = _mm_setzero_si128();   
 
-            for (int n = 0; n < kMaxIterations; n++)
+            for (int n = 0; n < params->iterations; n++)
             {
                 __m128 XX = _mm_mul_ps(X, X);
                 __m128 YY = _mm_mul_ps(Y, Y);
@@ -272,7 +281,7 @@ void ConstructMandelbrotSSE(sf::Image* image)
 
                 __m128 radius_2 = _mm_add_ps(XX, YY);
 
-                __m128 cmp = _mm_cmpge_ps(kRadius2m128, radius_2);
+                __m128 cmp = _mm_cmpge_ps(radius_2m128, radius_2);
                 if (!_mm_movemask_ps(cmp))
                     break;
                     
@@ -293,13 +302,17 @@ void ConstructMandelbrotSSE(sf::Image* image)
 }
 
 //======================VERSION 5=====================
-void ConstructMandelbrotAVX512(sf::Image* image)
+void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
 {
-    float y0 = kBottomAreaBoder;
-    for(size_t pixel_y = 0; pixel_y < kIterationNumber; pixel_y++, y0 += kDeltaY)
+    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const __m512 radius_2m512 = _mm512_set1_ps(params->radius_2);
+
+    float y0 = params->set_border.BottomBoder;
+    for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = kLeftAreaBoder;
-        for (size_t pixel_x = 0; pixel_x < kIterationNumber; pixel_x += 16, x0 += 16*kDeltaX)
+        float x0 = params->set_border.LeftBoder;
+        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += 16, x0 += 16*kDeltaX)
         {
             __m512 X0 = _mm512_add_ps(_mm512_set1_ps(x0), _mm512_mul_ps(_151413, _mm512_set1_ps(kDeltaX)));
 
@@ -314,7 +327,7 @@ void ConstructMandelbrotAVX512(sf::Image* image)
             #endif
                 
             __m512i steps = _mm512_setzero_si512();
-            for (int n = 0; n < kMaxIterations; n++)
+            for (int n = 0; n < params->iterations; n++)
             {
                 __m512 XX = _mm512_mul_ps(X, X);
                 __m512 YY = _mm512_mul_ps(Y, Y);
@@ -322,7 +335,7 @@ void ConstructMandelbrotAVX512(sf::Image* image)
 
                 __m512 radius_2 = _mm512_add_ps(XX, YY);
 
-                __mmask16 cmp = _mm512_cmp_ps_mask(radius_2, kRadius2m512, _CMP_LE_OS);
+                __mmask16 cmp = _mm512_cmp_ps_mask(radius_2, radius_2m512, _CMP_LE_OS);
                 
                 steps = _mm512_add_epi32(steps, _mm512_maskz_mov_epi32(cmp, _1_m512));
 
@@ -361,4 +374,37 @@ static void UpdateFpsViewer(sf::Text *fps_counter, float fps)
     sprintf(fps_str, "%g", fps);
 
     fps_counter->setString(fps_str);
+}
+
+static inline float GetDelta(float from, float to, size_t steps)
+{
+    return (from - to)/(float)steps;
+}
+
+static void ProcessSetMoving(MandelbrotParams *params)
+{
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+    {
+        params->set_border.LeftBoder  -= kMovingSpeed;
+        params->set_border.RightBoder -= kMovingSpeed;
+    }
+        
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+    {
+        params->set_border.LeftBoder  += kMovingSpeed;
+        params->set_border.RightBoder += kMovingSpeed;
+    }
+        
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+    {
+        params->set_border.UpBoder     += kMovingSpeed;
+        params->set_border.BottomBoder += kMovingSpeed;
+    }
+        
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+    {
+        params->set_border.UpBoder     -= kMovingSpeed;
+        params->set_border.BottomBoder -= kMovingSpeed;
+    }
 }
