@@ -18,6 +18,7 @@ struct MandelbrotParams
     size_t    image_height = 800;                //!height in pixel of image in which mandelbrot set need to draw
     size_t    radius_2     = 100;                //!square of radius for mandelbrot set calcultion
     size_t    iterations   = 256;                //!number of iterations after which point considered stable    
+    double    zoom_lvl     = 1;                  //!this parameter uses in moving 
 };
 
 void DrawMandelbrotSet(MandelbrotParams params = {});

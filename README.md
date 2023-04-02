@@ -3,6 +3,11 @@
 ![Mandelbrot set](/Output/MandelbrotImage.png)
 
 
+## Hot keys ##
+**arrows** - moving\
+**Q**      - zoom in\
+**E**      - zoom out\
+
 ## What was tested on
  |||
 -------------------|-

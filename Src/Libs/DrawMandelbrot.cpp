@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <emmintrin.h>
 #include <immintrin.h>
+#include <math.h>
 
 #include "DrawMandelbrot.h"
 #include "Stopwatch.h"
@@ -14,14 +15,16 @@ const char   kWindowHeader[] = "Mandelbrot set";
 
 //==============================OTHER CONSTS====================================
 const float   kMovingSpeed = 0.1;
+const float   kZoomSpeed   = 0.05;
 const float   _3210[4]     = {0, 1, 2, 3};
 const __m512  _151413      = _mm512_set_ps(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
 const __m512i _1_m512      = _mm512_set1_epi32(1);
 
 //==============================FUNCTIONS PROTOTIPE===============================
-static        void  ProcessSetMoving();
-static        void  UpdateFpsViewer(sf::Text *fps_counter, float fps);
-static inline float GetDelta(float to, float from, size_t steps);
+static        sf::Color StepToColor(size_t step);
+static        void      ProcessSetMoving(MandelbrotParams *params);
+static        void      UpdateFpsViewer(sf::Text *fps_counter, float fps);
+static inline float     GetDelta(float to, float from, size_t steps);
 
 //==============================FOR WRAPERS======================================
 static inline void mm_set_ps1(float* A, const float  elem) {for(int i = 0; i < 4; i++) A[i] = elem;}
@@ -68,7 +71,7 @@ void DrawMandelbrotSet(MandelbrotParams params)
                     }
                     case sf::Event::KeyPressed:
                     {
-                       ProcessSetMoving();
+                       ProcessSetMoving(&params);
                        break;
                     }
 
@@ -124,7 +127,7 @@ void ConstructMandelbrotV1(sf::Image* image, MandelbrotParams* params)
             }
 
             if (!draw_pixel)
-                image->setPixel(pixel_x, pixel_y, sf::Color((i*10)%256, i, i));
+                image->setPixel(pixel_x, pixel_y, StepToColor(i));
             
         }
     }
@@ -174,7 +177,7 @@ void ConstructMandelbrotV2(sf::Image* image, MandelbrotParams* params)
             for (int i = 0; i < 4; i++)
             {
                 if (draw_pixel & (1 << i))
-                    image->setPixel(pixel_x + i, pixel_y, sf::Color((steps[i]*10)%256, steps[i], steps[i]));
+                    image->setPixel(pixel_x + i, pixel_y, StepToColor(steps[i]));
             }
             
         }
@@ -246,7 +249,7 @@ void ConstructMandelbrotV3(sf::Image* image, MandelbrotParams* params)
             for (int i = 0; i < 4; i++)
             {
                 if (draw_pixel & (1 << i))
-                    image->setPixel(pixel_x + i, pixel_y, sf::Color((N[i]*10)%256, N[i], N[i]));
+                    image->setPixel(pixel_x + i, pixel_y, StepToColor(N[i]));
             }
                 
         }
@@ -295,7 +298,7 @@ void ConstructMandelbrotSSE(sf::Image* image, MandelbrotParams* params)
             for (int i = 0; i < 4; i++)
             {
                 if (step_int[i])
-                    image->setPixel(pixel_x + i, pixel_y, sf::Color((step_int[i]*10)%256, step_int[i], step_int[i]));
+                    image->setPixel(pixel_x + i, pixel_y, StepToColor(step_int[i]));
             }           
         }
     }
@@ -362,7 +365,7 @@ void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
                     printf("step[%d] = %d\n", i, step_int[i]);
                 #endif
                 if (step_int[i])
-                    image->setPixel(pixel_x + i, pixel_y, sf::Color((step_int[i]*10)%256, step_int[i], step_int[i]));
+                    image->setPixel(pixel_x + i, pixel_y, StepToColor(step_int[i]));
             }           
         }
     }
@@ -376,35 +379,57 @@ static void UpdateFpsViewer(sf::Text *fps_counter, float fps)
     fps_counter->setString(fps_str);
 }
 
-static inline float GetDelta(float from, float to, size_t steps)
+static inline float GetDelta(float a, float b, size_t steps)
 {
-    return (from - to)/(float)steps;
+    return abs(a - b)/(float)steps;
+}
+
+static sf::Color StepToColor(size_t step)
+{
+    return sf::Color((step*7)%256, (step*3)%256, (step*5)%256);
 }
 
 static void ProcessSetMoving(MandelbrotParams *params)
 {
-
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
     {
-        params->set_border.LeftBoder  -= kMovingSpeed;
-        params->set_border.RightBoder -= kMovingSpeed;
+        params->set_border.LeftBoder  -= kMovingSpeed*params->zoom_lvl;
+        params->set_border.RightBoder -= kMovingSpeed*params->zoom_lvl;
     }
         
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
     {
-        params->set_border.LeftBoder  += kMovingSpeed;
-        params->set_border.RightBoder += kMovingSpeed;
+        params->set_border.LeftBoder  += kMovingSpeed*params->zoom_lvl;
+        params->set_border.RightBoder += kMovingSpeed*params->zoom_lvl;
     }
         
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
     {
-        params->set_border.UpBoder     += kMovingSpeed;
-        params->set_border.BottomBoder += kMovingSpeed;
+        params->set_border.UpBoder     -= kMovingSpeed*params->zoom_lvl;
+        params->set_border.BottomBoder -= kMovingSpeed*params->zoom_lvl;
     }
         
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
     {
-        params->set_border.UpBoder     -= kMovingSpeed;
-        params->set_border.BottomBoder -= kMovingSpeed;
+        params->set_border.UpBoder     += kMovingSpeed*params->zoom_lvl;
+        params->set_border.BottomBoder += kMovingSpeed*params->zoom_lvl;
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+    {
+        params->set_border.UpBoder     -= kZoomSpeed * sqrt(params->zoom_lvl);
+        params->set_border.BottomBoder += kZoomSpeed * sqrt(params->zoom_lvl);
+        params->set_border.RightBoder  -= kZoomSpeed * sqrt(params->zoom_lvl);
+        params->set_border.LeftBoder   += kZoomSpeed * sqrt(params->zoom_lvl);
+        params->zoom_lvl /= 1.065;
+    }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+    {
+        params->set_border.UpBoder     += kZoomSpeed * sqrt(params->zoom_lvl);
+        params->set_border.BottomBoder -= kZoomSpeed * sqrt(params->zoom_lvl);
+        params->set_border.RightBoder  += kZoomSpeed * sqrt(params->zoom_lvl);
+        params->set_border.LeftBoder   -= kZoomSpeed * sqrt(params->zoom_lvl);
+        params->zoom_lvl *= 1.065;
     }
 }
