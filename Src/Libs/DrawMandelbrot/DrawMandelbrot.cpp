@@ -101,8 +101,8 @@ void DrawMandelbrotSet(MandelbrotParams params)
 //======================VERSION 1=====================
 void ConstructMandelbrotV1(sf::Image* image, MandelbrotParams* params)
 {
-    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
 
     float x0 = params->set_border.LeftBoder;
     for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x++, x0 += kDeltaX)
@@ -137,6 +137,8 @@ void ConstructMandelbrotV1(sf::Image* image, MandelbrotParams* params)
 
             if (!draw_pixel)
                 image->setPixel(pixel_x, pixel_y, StepToColor(i));
+            else 
+                image->setPixel(pixel_x, pixel_y, sf::Color::Black);
             
         }
     }
