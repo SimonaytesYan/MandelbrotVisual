@@ -2,6 +2,8 @@
 #define SYM_STOPWATCH
 #include <sys/time.h>
 
+//! chrono
+//! sfml timer
 
 #define InitTimer()              \
     struct timeval stop, start;

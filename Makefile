@@ -4,14 +4,14 @@ AVX_512_FLAGS = -march=sandybridge -march=haswell -march=knl
 SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 
 debug:
-	g++ -c $(DEBUG_FLAGS) Src/Libs/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	g++ -c $(DEBUG_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 	g++ $(DEBUG_FLAGS) Src/main.cpp DrawMandel.o -o $(SFML_FLAGS) Exe/DrawMandel
 fast:
-	g++ -c $(FAST_FLAGS) Src/Libs/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	g++ -c $(FAST_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 	g++ $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o -o Exe/DrawMandel $(SFML_FLAGS)
 
 avx512:
-	g++ -c $(AVX_512_FLAGS) $(FAST_FLAGS) Src/Libs/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	g++ -c $(AVX_512_FLAGS) $(FAST_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 	g++ $(AVX_512_FLAGS) $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o -o Exe/DrawMandel $(SFML_FLAGS)
 	
 chat_gpt:

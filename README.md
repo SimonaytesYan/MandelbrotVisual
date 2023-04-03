@@ -4,9 +4,9 @@
 
 
 ## Hot keys ##
-**arrows** - moving\
+**WASD**   - moving\
 **Q**      - zoom in\
-**E**      - zoom out\
+**E**      - zoom out
 
 ## What was tested on
  |||
