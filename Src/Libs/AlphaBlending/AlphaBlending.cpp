@@ -5,6 +5,7 @@
 #include "../Stopwatch.h"
 
 #define DRAW
+//#define DEBUG
 
 const size_t kMaxFpsStrLen = 20;
 
@@ -126,17 +127,18 @@ void AlphaBlendingV1(Image_t* result, const Image_t* background, const Image_t* 
                 Pixel_t fg = foreground->pixels[y * foreground->width + x];
                 Pixel_t bg = background->pixels[y * background->width + x];
 
-                #ifdef DEBUG
-                    if (fg.g || fg.b || fg.r)
-                    {
-                        printf("(%d, %d)\n", x, y);
-                        printf("(r = %d, g = %d, b = %d, a = %d)\n", fg.r, fg.g, fg.b, fg.a);
-                    }
-                #endif
-
                 res_pixel.r = (char)((fg.r * fg.a + bg.r * (255 - fg.a)) >> 8);
                 res_pixel.g = (char)((fg.g * fg.a + bg.g * (255 - fg.a)) >> 8);
                 res_pixel.b = (char)((fg.b * fg.a + bg.b * (255 - fg.a)) >> 8);
+
+                #ifdef DEBUG
+                    printf("(%d, %d)\n", x, y);
+                    printf("fg  = (r = %x, g = %x, b = %x, a = %x)\n", fg.r, fg.g, fg.b, fg.a);
+                    printf("res = (r = %x, g = %x, b = %x, a = %x)\n", res_pixel.r, res_pixel.g, res_pixel.b, res_pixel.a);
+                    int k = 0;
+
+//                    scanf("%c", &k);
+                #endif
                 //res_pixel.r = fg.r;
                 //res_pixel.g = fg.g;
                 //res_pixel.b = fg.b;
