@@ -5,10 +5,10 @@
 
 struct Pixel_t
 {
-    char r = 0;
-    char g = 0;
-    char b = 0;
-    char a = 0;
+    unsigned char r = 0;
+    unsigned char g = 0;
+    unsigned char b = 0;
+    unsigned char a = 0;
 };
 
 struct Image_t
