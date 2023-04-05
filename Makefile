@@ -3,23 +3,25 @@ FAST_FLAGS  = -O3 -msse4.2
 AVX_512_FLAGS = -march=sandybridge -march=haswell -march=knl -march=native
 SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 
-debug: debug_man_set debug_alpha_blending debug_parse_bmp
-	g++ $(DEBUG_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o -o Exe/Run $(SFML_FLAGS)
+debug: debug_man_set debug_alpha_blending debug_parse_bmp debug_calloc
+	g++ $(DEBUG_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
+fast: fast_man_set fast_alpha_blending fast_parse_bmp fast_calloc
+	g++ $(FAST_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
 
-fast: fast_man_set fast_alpha_blending fast_parse_bmp
-	g++ $(FAST_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o -o Exe/Run $(SFML_FLAGS)
+debug_alpha_blending: debug_calloc
+	g++ -c $(DEBUG_FLAGS) $(AVX_512_FLAGS) Src/Libs/AlphaBlending/AlphaBlending.cpp Obj/AlignedCalloc.o -o Obj/AlphaBlending.o
+fast_alpha_blending: fast_calloc
+	g++ -c $(FAST_FLAGS) $(AVX_512_FLAGS) Src/Libs/AlphaBlending/AlphaBlending.cpp Obj/AlignedCalloc.o -o Obj/AlphaBlending.o
 
-debug_alpha_blending:
-	g++ -c $(DEBUG_FLAGS) $(AVX_512_FLAGS) Src/Libs/AlphaBlending/AlphaBlending.cpp -o Obj/AlphaBlending.o
+debug_parse_bmp: debug_calloc
+	g++ -c $(DEBUG_FLAGS) Src/Libs/ParseBmp/ParseBmp.cpp Obj/AlignedCalloc.o -o Obj/ParseBmp.o
+fast_parse_bmp: fast_calloc
+	g++ -c $(FAST_FLAGS) Src/Libs/ParseBmp/ParseBmp.cpp Obj/AlignedCalloc.o -o Obj/ParseBmp.o
 
-fast_alpha_blending:
-	g++ -c $(FAST_FLAGS) $(AVX_512_FLAGS) Src/Libs/AlphaBlending/AlphaBlending.cpp -o Obj/AlphaBlending.o
-
-debug_parse_bmp:
-	g++ -c $(DEBUG_FLAGS) Src/Libs/ParseBmp/ParseBmp.cpp -o Obj/ParseBmp.o
-
-fast_parse_bmp:
-	g++ -c $(FAST_FLAGS) Src/Libs/ParseBmp/ParseBmp.cpp -o Obj/ParseBmp.o
+debug_calloc:
+	g++ -c $(DEBUG_FLAGS) Src/Libs/AlignedCalloc/AlignedCalloc.cpp -o Obj/AlignedCalloc.o
+fast_calloc:
+	g++ -c $(FAST_FLAGS) Src/Libs/AlignedCalloc/AlignedCalloc.cpp -o Obj/AlignedCalloc.o
 
 debug_man_set:
 	g++ -c $(DEBUG_FLAGS) $(AVX_512_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o

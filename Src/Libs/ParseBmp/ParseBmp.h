@@ -21,10 +21,11 @@ struct BmpFileInfo
 
 struct Image_t
 {
-    Pixel_t*    pixels = nullptr;
-    BmpFileInfo info   = {};
+    char*       real_array_ptr = nullptr;
+    Pixel_t*    pixels         = nullptr;
+    BmpFileInfo info           = {};
 };
 
-void GetImageFromBMP(Image_t* image, const char* file_path);
+void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment = 1);
 
 #endif

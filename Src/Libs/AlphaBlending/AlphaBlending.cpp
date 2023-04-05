@@ -6,10 +6,11 @@
 #include <string.h>
 
 #include "AlphaBlending.h"
+#include "../AlignedCalloc/AlignedCalloc.h"
 #include "../Stopwatch.h"
 
 #define DRAW
-//#define DEBUG
+#define DEBUG
 
 const size_t kMaxFpsStrLen = 20;
 
@@ -28,9 +29,11 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
     GetImageFromBMP(&foreground, foreground_path);
 
     Image_t result = {};
-    result.pixels  = (Pixel_t*)calloc(sizeof(Pixel_t), background.info.h * background.info.w);
-    result.info.h       = background.info.h;
-    result.info.w       = background.info.w;
+
+    #ifdef DEBUG
+        printf("pixels   = %p\n", result.pixels);
+        printf("real     = %p\n", result.real_array_ptr);
+    #endif
 
     sf::RenderWindow window(sf::VideoMode(background.info.w, background.info.h), kWindowHeader, sf::Style::Default);
 
@@ -49,7 +52,7 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
     while (window.isOpen())
     {
         StartTimer();
-        AlphaBlendingV1(&result, &background, &foreground);
+        AlphaBlendingAVX512(&result, &background, &foreground);
         //sf::Image result = AlphaBlendingV0(background, foreground);
         StopTimer();
 
@@ -91,6 +94,8 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
             printf("FPS = %g\n", ((1/(float)(GetTimerMicroseconds)) * 1000000));
         #endif
     }
+
+    AlignedFree((void**)&result.real_array_ptr);
 }
 
 sf::Image AlphaBlendingV0(sf::Image background, sf::Image foreground)
@@ -189,24 +194,30 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
     }
 
     size_t bg_size = sizeof(Pixel_t) * backgr->info.h * backgr->info.w;
-    result->pixels = (Pixel_t*)realloc(result->pixels, bg_size + 512); //
-    result->info.h = backgr->info.h;                                             //
-    result->info.w  = backgr->info.w;                                            //Copy background to result
-    memcpy(result->pixels, backgr->pixels, bg_size);                   //
+    
+    result->pixels = (Pixel_t*)realloc(result->pixels, bg_size);             //
+    result->info.h = backgr->info.h;                                         //
+    result->info.w  = backgr->info.w;                                        //Copy background to result
+    memcpy(result->pixels, backgr->pixels, bg_size);                         //
 
-    size_t   fg_pixel_num = foregr->info.h*foregr->info.w;
-    Pixel_t* process_part = (Pixel_t*)calloc(sizeof(Pixel_t), fg_pixel_num);
+    size_t   fg_pixel_num    = foregr->info.h*foregr->info.w;
+    Pixel_t* na_process_part = nullptr;                                      //not aligned pointer to processing part
+    Pixel_t* process_part    = (Pixel_t*)AlignedCalloc((void**)&na_process_part, 
+                                                        sizeof(Pixel_t)*fg_pixel_num, 64);
 
+    #ifdef DEBUG
+        printf("pixels   = %p\n", process_part);
+        printf("real     = %p\n", na_process_part);
+    #endif
+    
     size_t line_len = sizeof(Pixel_t) * foregr->info.w;   
-    for (size_t y = 0; y < foregr->info.h; y++)                  //put processing part of background in one-dimensional array
-    {
+    for (size_t y = 0; y < foregr->info.h; y++)                             //put processing part of background in one-dimensional array
         memcpy(process_part + y*foregr->info.w, &backgr->pixels[y * backgr->info.w], line_len);
-    }
 
-    for (size_t pixel = 0; pixel < fg_pixel_num; pixel += 16)         //Process alhpa blending
+    for (size_t pixel = 0; pixel < fg_pixel_num; pixel += 16)               //Process alhpa blending
     {
-        __m512i fg = _mm512_load_epi32(&foregr[pixel]);
         __m512i bg = _mm512_load_epi32(&process_part[pixel]);
+        __m512i fg = _mm512_load_epi32(&foregr[pixel]);
 
         //----------------------------------------------------
         //fg    = [a0 r0 g0 b0][a1 r1 g1 b1][a2 r2 g2 b2]...
@@ -302,6 +313,11 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
 
         res = _mm512_or_epi32(res, _mm512_and_epi32(res_ag, mask));
     }    
+
+    for (size_t y = 0; y < foregr->info.h; y++)          //put processing part to result
+        memcpy(&result->pixels[y*backgr->info.w], process_part + y*foregr->info.w, line_len);
+
+    AlignedFree((void**)&na_process_part);
 }
 
 static void UpdateFpsViewer(sf::Text *fps_counter, float fps)

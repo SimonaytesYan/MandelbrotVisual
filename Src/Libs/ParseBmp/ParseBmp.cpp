@@ -19,7 +19,7 @@ const size_t kBmpHeaderSize     = 0x36;
 static void GetBmpFileInfo(BmpFileInfo* result, const char* file_path);
 static long GetTextSize(const char *file_name);
 
-void GetImageFromBMP(Image_t* image, const char* file_path)
+void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
 {
     GetBmpFileInfo(&image->info, file_path);
 
