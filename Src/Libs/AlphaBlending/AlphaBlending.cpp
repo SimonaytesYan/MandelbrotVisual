@@ -49,7 +49,7 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
     while (window.isOpen())
     {
         StartTimer();
-        AlphaBlendingAVX512(&result, &background, &foreground);
+        AlphaBlendingV1(&result, &background, &foreground);
         //sf::Image result = AlphaBlendingV0(background, foreground);
         StopTimer();
 

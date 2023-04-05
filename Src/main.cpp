@@ -4,5 +4,5 @@
 
 int main()
 {
-    MakeAlphaBlending("Images/Table.bmp", "Images/Cat.bmp");
+    MakeAlphaBlending("Images/sample_1280×853.bmp", "Images/Cat.bmp");
 }
