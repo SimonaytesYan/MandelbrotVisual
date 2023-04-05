@@ -9,7 +9,7 @@
 #include "ParseBmp.h"
 #include "../AlignedCalloc/AlignedCalloc.h"
 
-#define DEBUG
+//#define DEBUG
 
 const size_t kStartPixelsOffset = 0xA;
 const size_t kBcWidthOffset     = 0x12;
@@ -37,7 +37,7 @@ void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
 
     if (pixel_array == MAP_FAILED)
     {
-        fprintf(stderr, "error during open file\n");
+        fprintf(stderr, "Error during open file %s\n", file_path);
         switch (errno)
         {
             case EINVAL:
@@ -108,6 +108,12 @@ static void GetBmpFileInfo(BmpFileInfo* result, const char* file_path)
 {
     int   fd        = open(file_path, O_RDONLY);
     char* file_info = (char*)mmap(NULL, kBmpHeaderSize, PROT_READ, MAP_PRIVATE, fd, 0);
+
+    if (file_info == MAP_FAILED)
+    {
+        fprintf(stderr, "Error during open file %s\n", file_path);
+        return;
+    } 
 
     memcpy(&result->w,  &file_info[kBcWidthOffset], 2);                         //
     memcpy(&result->h, &file_info[kBcHeightOffset], 2);                         //get size of image

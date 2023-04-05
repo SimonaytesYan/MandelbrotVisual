@@ -3,7 +3,7 @@
 
 #include "AlignedCalloc.h"
 
-#define DEBUG
+//#define DEBUG
 
 void* AlignedCalloc(void** addres, const size_t size, const size_t alignment)
 {

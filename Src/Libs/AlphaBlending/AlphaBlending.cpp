@@ -10,7 +10,7 @@
 #include "../Stopwatch.h"
 
 #define DRAW
-#define DEBUG
+//#define DEBUG
 
 const size_t kMaxFpsStrLen = 20;
 
@@ -27,13 +27,6 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
 
     GetImageFromBMP(&background, background_path, 64);
     GetImageFromBMP(&foreground, foreground_path, 64);
-
-    #ifdef DEBUG
-        printf("fg    = %p\n", foreground.pixels);
-        printf("bg    = %p\n", background.pixels);
-        printf("fg[0] = %x\n", foreground.pixels[0]);
-        printf("bg[0] = %x\n", background.pixels[0]);
-    #endif
 
     Image_t result = {};
 
@@ -54,8 +47,8 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
     while (window.isOpen())
     {
         StartTimer();
+        //AlphaBlendingV1(&result, &background, &foreground);
         AlphaBlendingAVX512(&result, &background, &foreground);
-        //sf::Image result = AlphaBlendingV0(background, foreground);
         StopTimer();
 
         #ifdef DRAW
@@ -206,11 +199,6 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
     Pixel_t* na_process_part = nullptr;                                      //not aligned pointer to processing part
     Pixel_t* process_part    = (Pixel_t*)AlignedCalloc((void**)&na_process_part, 
                                                         sizeof(Pixel_t)*fg_pixel_num, 64);
-
-    #ifdef DEBUG
-        printf("pixels   = %p\n", process_part);
-        printf("real     = %p\n", na_process_part);
-    #endif
     
     size_t line_len = sizeof(Pixel_t) * foregr->info.w;   
     for (size_t y = 0; y < foregr->info.h; y++)                             //put processing part of background in one-dimensional array
@@ -218,52 +206,39 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
 
     for (size_t pixel = 0; pixel < fg_pixel_num; pixel += 16)               //Process alhpa blending
     {
-        #ifdef DEBUG
-            printf("bp    = %x\n", process_part[pixel]);
-            printf("fg    = %x\n", foregr->pixels[pixel]);
-            printf("pixel = %d\n", pixel);
-
-            int k = 0;
-            scanf("%c", &k);
-        #endif
-        __m512i bg = _mm512_load_epi32(&process_part[pixel]);
-        __m512i fg = _mm512_load_epi32(&foregr->pixels[pixel]);
-        #ifdef DEBUG
-            Printfm512i(bg);
-            printf("\n");
-            Printfm512i(fg);
-            printf("\n");
-        #endif
+        __m512i fg = _mm512_load_si512(&foregr->pixels[pixel]);
+        __m512i bg = _mm512_load_si512(&process_part[pixel]);
 
         //----------------------------------------------------
         //fg    = [a0 r0 g0 b0][a1 r1 g1 b1][a2 r2 g2 b2]...
         //fg_rb = [00 r0 00 b0][00 r1 00 b1][00 r2 00 b2]...
         //----------------------------------------------------
 
-        __m512i fg_rb = _mm512_maskz_mov_epi32(0x00FF00FF, fg);
-        __m512i bg_rb = _mm512_maskz_mov_epi32(0x00FF00FF, bg);
+        unsigned long long mask1 = 0b0101010101010101010101010101010101010101010101010101010101010101;
+        __m512i fg_rb = _mm512_maskz_mov_epi8(mask1, fg);
+        __m512i bg_rb = _mm512_maskz_mov_epi8(mask1, bg);
 
         //----------------------------------------------------
         //fg    = [a0 r0 g0 b0][a1 r1 g1 b1][a2 r2 g2 b2]...
         //fg_ag = [00 a0 00 g0][00 a1 00 g1][00 a2 00 g2]...
         //----------------------------------------------------
 
-        __m512i shuffle_mask1 = _mm512_set_epi8(0x80, 0x00, 0x80, 0x02,
-                                                0x80, 0x04, 0x80, 0x06,
-                                                0x80, 0x08, 0x80, 0x10,
-                                                0x80, 0x12, 0x80, 0x14,
-                                                0x80, 0x16, 0x80, 0x18,
-                                                0x80, 0x20, 0x80, 0x22,
-                                                0x80, 0x24, 0x80, 0x26,
-                                                0x80, 0x28, 0x80, 0x30,
-                                                0x80, 0x32, 0x80, 0x34,
-                                                0x80, 0x36, 0x80, 0x38,
-                                                0x80, 0x40, 0x80, 0x42,
-                                                0x80, 0x44, 0x80, 0x46,
-                                                0x80, 0x48, 0x80, 0x50,
-                                                0x80, 0x52, 0x80, 0x54,
-                                                0x80, 0x56, 0x80, 0x58,
-                                                0x80, 0x60, 0x80, 0x62);
+        __m512i shuffle_mask1 = _mm512_set_epi8(0x80, 63, 0x80, 61,
+                                                0x80, 59, 0x80, 57,
+                                                0x80, 55, 0x80, 53,
+                                                0x80, 51, 0x80, 49,
+                                                0x80, 47, 0x80, 45,
+                                                0x80, 43, 0x80, 41,
+                                                0x80, 39, 0x80, 37,
+                                                0x80, 35, 0x80, 33,
+                                                0x80, 31, 0x80, 29,
+                                                0x80, 27, 0x80, 25,
+                                                0x80, 23, 0x80, 21,
+                                                0x80, 19, 0x80, 17,
+                                                0x80, 15, 0x80, 13,
+                                                0x80, 11, 0x80,  9,
+                                                0x80,  7, 0x80,  5,
+                                                0x80,  3, 0x80,  1);
 
         __m512i fg_ag = _mm512_shuffle_epi8(fg, shuffle_mask1);
         __m512i bg_ag = _mm512_shuffle_epi8(bg, shuffle_mask1);
@@ -273,22 +248,22 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
         //fg_a = [00 a0 00 a0][00 a1 00 a1][00 a2 00 a2]...
         //----------------------------------------------------
 
-        __m512i shuffle_mask2 = _mm512_set_epi8(0x80, 0x00, 0x80, 0x00,
-                                                0x80, 0x04, 0x80, 0x04,
-                                                0x80, 0x08, 0x80, 0x08,
-                                                0x80, 0x12, 0x80, 0x12,
-                                                0x80, 0x16, 0x80, 0x16,
-                                                0x80, 0x20, 0x80, 0x20,
-                                                0x80, 0x24, 0x80, 0x24,
-                                                0x80, 0x28, 0x80, 0x28,
-                                                0x80, 0x32, 0x80, 0x32,
-                                                0x80, 0x36, 0x80, 0x36,
-                                                0x80, 0x40, 0x80, 0x40,
-                                                0x80, 0x44, 0x80, 0x44,
-                                                0x80, 0x48, 0x80, 0x48,
-                                                0x80, 0x52, 0x80, 0x52,
-                                                0x80, 0x56, 0x80, 0x56,
-                                                0x80, 0x60, 0x80, 0x60);
+        __m512i shuffle_mask2 = _mm512_set_epi8(0x80, 63, 0x80, 63,
+                                                0x80, 59, 0x80, 59,
+                                                0x80, 55, 0x80, 55,
+                                                0x80, 51, 0x80, 51,
+                                                0x80, 47, 0x80, 47,
+                                                0x80, 43, 0x80, 43,
+                                                0x80, 39, 0x80, 39,
+                                                0x80, 35, 0x80, 35,
+                                                0x80, 31, 0x80, 31,
+                                                0x80, 27, 0x80, 27,
+                                                0x80, 23, 0x80, 23,
+                                                0x80, 19, 0x80, 19,
+                                                0x80, 15, 0x80, 15,
+                                                0x80, 11, 0x80, 11,
+                                                0x80,  7, 0x80,  7,
+                                                0x80,  3, 0x80,  3);
 
         __m512i fg_a = _mm512_shuffle_epi8(fg, shuffle_mask2);
 
@@ -300,8 +275,10 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
         //res_rb = [R0 ** B0 **][R1 ** B1 **][R2 ** B2 **]...
         //----------------------------------------------------
 
-        __m512i res_rb = _mm512_mullo_epi16(fg_a, fg_rb) + _mm512_mullo_epi16(_mm512_sub_epi16(_mm512_set1_epi16(255), fg_a), bg_rb);
-        __m512i res_ag = _mm512_mullo_epi16(fg_a, fg_ag) + _mm512_mullo_epi16(_mm512_sub_epi16(_mm512_set1_epi16(255), fg_a), bg_ag);
+        __m512i _255_fg_a = _mm512_sub_epi16(_mm512_set1_epi16(255), fg_a);
+        __m512i res_rb    = _mm512_add_epi8(_mm512_mullo_epi16(fg_a, fg_rb), _mm512_mullo_epi16(_255_fg_a, bg_rb));
+        __m512i res_ag    = _mm512_add_epi8(_mm512_mullo_epi16(fg_a, fg_ag), _mm512_mullo_epi16(_255_fg_a, bg_ag));
+
 
         //-----------------------------------------------------
         //res_rb = [R0 ** B0 **][R1 ** B1 **][R2 ** B2 **]...
@@ -309,6 +286,16 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
         //-----------------------------------------------------
 
         __m512i res = _mm512_shuffle_epi8(res_rb, shuffle_mask1);
+        #ifdef DEBUG
+            printf("res    = ");
+            Printfm512i(res);
+            printf("\n");
+        #endif
+
+        //-----------------------------------------------------
+        //res_ag = [A0 ** G0 **][A1 ** G1 **][A2 ** G2 **]...
+        //res    = [A0 R0 G0 B0][A1 R1 G1 B1][A2 R2 G2 B2]
+        //-----------------------------------------------------
 
         __m512i mask = _mm512_set_epi8(0xFF, 0x00, 0xFF, 0x00,
                                        0xFF, 0x00, 0xFF, 0x00,
@@ -328,10 +315,27 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
                                        0xFF, 0x00, 0xFF, 0x00);
 
         res = _mm512_or_epi32(res, _mm512_and_epi32(res_ag, mask));
+
+        _mm512_stream_si512((__m512i*)&process_part[pixel], res);     //put res in memory
+        #ifdef DEBUG
+            printf("res    = ");
+            Printfm512i(res);
+            printf("\n");
+
+            int k = 0;
+            scanf("%c", &k);
+        #endif
     }    
 
     for (size_t y = 0; y < foregr->info.h; y++)          //put processing part to result
+    {
+        //printf("[%08x]", process_part[0]);
+
+        //int kfd = 0;
+        //scanf("%c", &kfd);
+
         memcpy(&result->pixels[y*backgr->info.w], process_part + y*foregr->info.w, line_len);
+    }
 
     AlignedFree((void**)&na_process_part);
 }
@@ -340,7 +344,7 @@ static void Printfm512i(__m512i a)
 {
     int* part_a = (int*)&a;
     for (int i = 0; i < 16; i++)
-        printf("%x", part_a[i]);
+        printf("[%08x]", part_a[i]);
     
 }
 
