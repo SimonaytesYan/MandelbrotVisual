@@ -18,22 +18,24 @@ const char   kWindowHeader[]     = "Alpha blending";
 const size_t kTimeCalcAlphaBlend = 1;
 
 static void UpdateFpsViewer(sf::Text *fps_counter, float fps);
-void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* foregr);
+static void Printfm512i(__m512i a);
 
 void MakeAlphaBlending(const char* background_path, const  char* foreground_path)
 {
     Image_t background = {};
     Image_t foreground = {};
 
-    GetImageFromBMP(&background, background_path);
-    GetImageFromBMP(&foreground, foreground_path);
-
-    Image_t result = {};
+    GetImageFromBMP(&background, background_path, 64);
+    GetImageFromBMP(&foreground, foreground_path, 64);
 
     #ifdef DEBUG
-        printf("pixels   = %p\n", result.pixels);
-        printf("real     = %p\n", result.real_array_ptr);
+        printf("fg    = %p\n", foreground.pixels);
+        printf("bg    = %p\n", background.pixels);
+        printf("fg[0] = %x\n", foreground.pixels[0]);
+        printf("bg[0] = %x\n", background.pixels[0]);
     #endif
+
+    Image_t result = {};
 
     sf::RenderWindow window(sf::VideoMode(background.info.w, background.info.h), kWindowHeader, sf::Style::Default);
 
@@ -216,8 +218,22 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
 
     for (size_t pixel = 0; pixel < fg_pixel_num; pixel += 16)               //Process alhpa blending
     {
+        #ifdef DEBUG
+            printf("bp    = %x\n", process_part[pixel]);
+            printf("fg    = %x\n", foregr->pixels[pixel]);
+            printf("pixel = %d\n", pixel);
+
+            int k = 0;
+            scanf("%c", &k);
+        #endif
         __m512i bg = _mm512_load_epi32(&process_part[pixel]);
-        __m512i fg = _mm512_load_epi32(&foregr[pixel]);
+        __m512i fg = _mm512_load_epi32(&foregr->pixels[pixel]);
+        #ifdef DEBUG
+            Printfm512i(bg);
+            printf("\n");
+            Printfm512i(fg);
+            printf("\n");
+        #endif
 
         //----------------------------------------------------
         //fg    = [a0 r0 g0 b0][a1 r1 g1 b1][a2 r2 g2 b2]...
@@ -318,6 +334,14 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
         memcpy(&result->pixels[y*backgr->info.w], process_part + y*foregr->info.w, line_len);
 
     AlignedFree((void**)&na_process_part);
+}
+
+static void Printfm512i(__m512i a)
+{
+    int* part_a = (int*)&a;
+    for (int i = 0; i < 16; i++)
+        printf("%x", part_a[i]);
+    
 }
 
 static void UpdateFpsViewer(sf::Text *fps_counter, float fps)

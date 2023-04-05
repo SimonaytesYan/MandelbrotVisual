@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "ParseBmp.h"
+#include "../AlignedCalloc/AlignedCalloc.h"
 
 #define DEBUG
 
@@ -75,7 +76,8 @@ void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
         return;
     }
     
-    image->pixels = (Pixel_t*)calloc(image->info.w * image->info.h, sizeof(Pixel_t));
+    image->pixels = (Pixel_t*)AlignedCalloc((void**)&image->real_array_ptr,
+                                            image->info.w * image->info.h * sizeof(Pixel_t), alignment);
 
     if (image->info.pixel_size == 3)
     {

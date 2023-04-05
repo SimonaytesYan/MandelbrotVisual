@@ -1,6 +1,9 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "AlignedCalloc.h"
+
+#define DEBUG
 
 void* AlignedCalloc(void** addres, const size_t size, const size_t alignment)
 {
@@ -11,7 +14,7 @@ void* AlignedCalloc(void** addres, const size_t size, const size_t alignment)
         printf("diff_to_align = %zu\n", diff_to_align);
         printf("aligment      = %zu\n", alignment);
         printf("address       = %p\n",  *addres);
-        printf("address_st    = %p\n",  (size_t)*addres);
+        printf("address_st    = %p\n\n",  (size_t)*addres);
     #endif
 
     if (diff_to_align == alignment)
@@ -23,6 +26,6 @@ void* AlignedCalloc(void** addres, const size_t size, const size_t alignment)
 
 void AlignedFree(void** addres)
 {
-    free(&addres);
+    free(*addres);
     *addres          = nullptr;
 }
