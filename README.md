@@ -1,7 +1,16 @@
+# Alpha blending #
+
+Stage                                                                              | FPS(10^3)   
+-----------------------------------------------------------------------------------|:-------------------
+ Naive implementation + debug flags                                                | **24    - 24,5**
+ AVX512 + debug flags + put processing part of background in one-dimensional array | **154   - 156,5**
+ Naive implementation + -O3 flags                                                  | **472,5 - 474,5**
+ AVX512 + -O3 + put processing part of background in one-dimensional array         | **504,5 - 501,5**
+ AVX512 + -O3 + use not aligned load and store instructions                        | **1172  - 1190**
+
 # Mandelbrot set visualisation #
 
 ![Mandelbrot set](/Output/MandelbrotImage.png)
-
 
 ## Hot keys ##
 **WASD**   - moving\

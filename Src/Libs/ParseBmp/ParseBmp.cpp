@@ -23,7 +23,7 @@ static long GetTextSize(const char *file_name);
 void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
 {
     GetBmpFileInfo(&image->info, file_path);
-    
+
     int   fd          = open(file_path, O_RDONLY);
     char* pixel_array = (char*)mmap(NULL, image->info.w * image->info.h * image->info.pixel_size + image->info.pixel_offset, 
                                     PROT_READ, MAP_PRIVATE, fd, 0);
@@ -79,7 +79,7 @@ void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
         {
             memcpy(&image->pixels[i], &pixel_array[i*3 + image->info.pixel_offset], 3);
 
-            image->pixels[i].a = (char)0xFF;
+            image->pixels[i].a = (unsigned char)0xFF;
         }
     }
     else if (image->info.pixel_size == 4)

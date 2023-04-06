@@ -6,14 +6,15 @@
 //! sfml timer
 
 #define InitTimer()              \
-    struct timeval stop, start;
+    clock_t startTime, endTime;
+
 #define StartTimer()             \
-    gettimeofday(&start, NULL);
+        startTime = clock();
 
 #define StopTimer()              \
-    gettimeofday(&stop, NULL);
+        endTime   = clock();
 
 #define GetTimerMicroseconds()       \
-    (((stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec))
+    (((double)endTime - (double)startTime) / CLOCKS_PER_SEC * 1000)
 
 #endif
