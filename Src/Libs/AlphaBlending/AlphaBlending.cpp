@@ -131,7 +131,11 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
 
             window.clear();
             image_texture.loadFromImage(res_image);
+
             sprite.setTexture(image_texture);
+
+            sprite.setScale(sf::Vector2f(window.getSize().x / (float)result.info.w, 
+                                         window.getSize().y / (float)result.info.h));
 
             window.draw(sprite);
             window.draw(fps_counter);
@@ -320,7 +324,7 @@ void AlphaBlendingAVX512(Image_t* result, const Image_t* backgr, const Image_t* 
         memcpy(&result->pixels[y*backgr->info.w], process_part + y*foregr->info.w, line_len);
     }
 
-    AlignedFree((void**)&na_process_part);
+    AlignedFree((void*)na_process_part);
 }
 
 static void Printfm512i(__m512i a)

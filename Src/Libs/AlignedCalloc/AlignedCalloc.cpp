@@ -24,8 +24,7 @@ void* AlignedCalloc(void** addres, const size_t size, const size_t alignment)
     return aligned_addres;
 }
 
-void AlignedFree(void** addres)
+void AlignedFree(void* addres)
 {
-    free(*addres);
-    *addres          = nullptr;
+    free(addres);
 }

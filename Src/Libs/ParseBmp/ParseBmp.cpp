@@ -23,14 +23,7 @@ static long GetTextSize(const char *file_name);
 void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
 {
     GetBmpFileInfo(&image->info, file_path);
-
-    #ifdef DEBUG
-        printf("h            = %d\n",   image->info.h);
-        printf("w            = %d\n",   image->info.w);
-        printf("pixel_size   = %d\n",   image->info.pixel_size);
-        printf("pixel_offs   = %d\n\n", image->info.pixel_offset);
-    #endif
-
+    
     int   fd          = open(file_path, O_RDONLY);
     char* pixel_array = (char*)mmap(NULL, image->info.w * image->info.h * image->info.pixel_size + image->info.pixel_offset, 
                                     PROT_READ, MAP_PRIVATE, fd, 0);
@@ -84,9 +77,8 @@ void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment)
         size_t image_arr_size = image->info.w * image->info.h;
         for (size_t i = 0; i < image_arr_size; i++)
         {
-            image->pixels[i].r = pixel_array[i*3 + 2 + image->info.pixel_offset];
-            image->pixels[i].g = pixel_array[i*3 + 1 + image->info.pixel_offset];
-            image->pixels[i].b = pixel_array[i*3     + image->info.pixel_offset];
+            memcpy(&image->pixels[i], &pixel_array[i*3 + image->info.pixel_offset], 3);
+
             image->pixels[i].a = (char)0xFF;
         }
     }
@@ -115,10 +107,10 @@ static void GetBmpFileInfo(BmpFileInfo* result, const char* file_path)
         return;
     } 
 
-    memcpy(&result->w,  &file_info[kBcWidthOffset], 2);                         //
+    memcpy(&result->w, &file_info[kBcWidthOffset],  2);                         //
     memcpy(&result->h, &file_info[kBcHeightOffset], 2);                         //get size of image
 
-    memcpy(&result->pixel_offset, &file_info[kStartPixelsOffset], sizeof(int)); //get start of the pixel array
+    memcpy(&result->pixel_offset, &file_info[kStartPixelsOffset], 4);           //get start of the pixel array
 
     memcpy(&result->pixel_size,   &file_info[kPixelSizeOffset],   2);           //get numbet bit in one pixel
     result->pixel_size /= 8;                                                    //convert from bit to byte
