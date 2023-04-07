@@ -1,12 +1,21 @@
+## Testing machine
+ |||
+-------------------|-
+**Compiler**           | g++ 11.3.0 
+**OS**                 | Ubuntu 11.3.0 
+**CPU**                | 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
+
 # Alpha blending #
 
-Stage                                                                              | FPS(10^3)   
------------------------------------------------------------------------------------|:-------------------
- Naive implementation + debug flags                                                | **24    - 24,5**
- AVX512 + debug flags + put processing part of background in one-dimensional array | **154   - 156,5**
- Naive implementation + -O3 flags                                                  | **472,5 - 474,5**
- AVX512 + -O3 + put processing part of background in one-dimensional array         | **504,5 - 501,5**
- AVX512 + -O3 + use not aligned load and store instructions                        | **1172  - 1190**
+Stage                                                                                               | FPS   
+----------------------------------------------------------------------------------------------------|:-------------------
+ Naive implementation + debug flags                                                                 | **21    - 22**
+ AVX512 + debug flags + put processing part of background in one-dimensional array                  | **150   - 155**
+ Naive implementation + -O3                                                                         | **312   - 320**
+ Naive implementation + -O3 and -march=native flags                                                 | **312   - 320**
+ AVX512 + -O3 + put processing part of background in one-dimensional array + aligned load and store | **550   - 557**
+ AVX512 + -O3 + use not aligned load and store instructions                                         | **1200  - 1210**
+ AVX512 + -O3 + use not aligned load and store instructions(reorginise code)                        | **1190  - 1210**
 
 # Mandelbrot set visualisation #
 
@@ -16,13 +25,6 @@ Stage                                                                           
 **WASD**   - moving\
 **Q**      - zoom in\
 **E**      - zoom out
-
-## What was tested on
- |||
--------------------|-
-**Compiler**           | g++ 11.3.0 
-**OS**                 | Ubuntu 11.3.0 
-**CPU**                | 11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz
 
 ### Notice ##
     All *.0 versions compile without optimisation flags

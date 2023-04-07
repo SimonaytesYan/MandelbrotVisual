@@ -11,7 +11,7 @@
 const size_t kMaxFpsStrLen = 20;
 
 const char   kWindowHeader[]     = "Alpha blending";
-const size_t kTimeCalcAlphaBlend = 1;
+const size_t kTimeCalcAlphaBlend = 1000;
 
 void MakeAlphaBlending(const char* background_path, const  char* foreground_path);
 void UpdateFpsViewer(sf::Text *fps_counter, float fps);
@@ -52,14 +52,14 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
     {    
         InitTimer();
         StartTimer();
-        AlphaBlendingAVX512(&result, &background, &foreground, kTimeCalcAlphaBlend);
-        //AlphaBlendingV1(&result, &background, &foreground, kTimeCalcAlphaBlend);
         //AlphaBlendingAVX512_V2(&result, &background, &foreground, kTimeCalcAlphaBlend);
+        //AlphaBlendingV1(&result, &background, &foreground, kTimeCalcAlphaBlend);
+        AlphaBlendingAVX512_V1(&result, &background, &foreground, kTimeCalcAlphaBlend);
         StopTimer();
         
         av_fps += (double)GetTimerMicroseconds();                                       //
         numbr_meas++;                                                                   //
-        if (numbr_meas % 100 == 0)                                                      //
+        if (numbr_meas % 10 == 0)                                                      //
         {                                                                               //Calc average fps
             printf("fps_av = %lf\n", (1 / av_fps) * 1000. *                          //
                                      (double)numbr_meas * (double)kTimeCalcAlphaBlend); //

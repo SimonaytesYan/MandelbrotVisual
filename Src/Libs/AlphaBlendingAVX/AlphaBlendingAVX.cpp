@@ -63,6 +63,8 @@ const __m512i kZeroEverySecond = _mm512_set_epi8(0xFF, 0x00, 0xFF, 0x00,
                                                   0xFF, 0x00, 0xFF, 0x00,
                                                   0xFF, 0x00, 0xFF, 0x00);
 
+const unsigned long long kGetEverySecFromFirst = 0b0101010101010101010101010101010101010101010101010101010101010101;
+
 static void Printfm512i(__m512i a);
 
 //!--------------------------------------------------------------------------------------
@@ -251,36 +253,41 @@ void AlphaBlendingAVX512_V2(Image_t* result, const Image_t* backgr, const Image_
 
     for (size_t t = 0; t < kTimeCalcAlphaBlend; t++)
     {
+        size_t ind_bg = 0;
+        size_t ind_fg = 0;
         for (size_t y = 0; y < foregr->info.h; y++)
         {
             for (size_t x = 0; x < foregr->info.w; x += 16)               //Process alhpa blending
             {
-                __m512i fg = _mm512_loadu_si512(&(foregr->pixels[y*foregr->info.w + x]));
-                __m512i bg = _mm512_loadu_si512(&(backgr->pixels[y*backgr->info.w + x]));
+                __m512i fg        = _mm512_loadu_si512(&(foregr->pixels[y*foregr->info.w + x]));
+                __m512i bg        = _mm512_loadu_si512(&(backgr->pixels[y*backgr->info.w + x]));
 
-                const unsigned long long mask = 0b0101010101010101010101010101010101010101010101010101010101010101;
-                __m512i fg_rb = _mm512_maskz_mov_epi8(mask, fg);
-                __m512i bg_rb = _mm512_maskz_mov_epi8(mask, bg);
-
+                __m512i fg_ag     = _mm512_shuffle_epi8(fg, k0To1And2To3);
+                __m512i bg_ag     = _mm512_shuffle_epi8(bg, k0To1And2To3);
                 __m512i fg_a      = _mm512_shuffle_epi8(fg, k0To1And0To3);
-                __m512i _255_fg_a = _mm512_sub_epi16(_mm512_set1_epi16(255), fg_a);
+                
+                fg = _mm512_maskz_mov_epi8(kGetEverySecFromFirst, fg);       //put in fg fg_rb
+                bg = _mm512_maskz_mov_epi8(kGetEverySecFromFirst, bg);       //put in bg bg_rbg
 
-                __m512i res_rb    = _mm512_add_epi8(_mm512_mullo_epi16(fg_a, fg_rb), _mm512_mullo_epi16(_255_fg_a, bg_rb));
+                fg    = _mm512_mullo_epi16(fg_a, fg);
+                fg_ag = _mm512_mullo_epi16(fg_a, fg_ag);
 
-                __m512i fg_ag = _mm512_shuffle_epi8(fg, k0To1And2To3);
-                __m512i bg_ag = _mm512_shuffle_epi8(bg, k0To1And2To3);
+                fg_a =  _mm512_sub_epi16(_mm512_set1_epi16(255), fg_a);
 
-                __m512i res_ag = _mm512_add_epi8(_mm512_mullo_epi16(fg_a, fg_ag), _mm512_mullo_epi16(_255_fg_a, bg_ag));
+                bg    = _mm512_mullo_epi16(fg_a, bg);
+                bg_ag = _mm512_mullo_epi16(fg_a, bg_ag);
 
-                __m512i res = _mm512_shuffle_epi8(res_rb, k0To1And2To3);
+                bg    = _mm512_add_epi8(fg, bg);
+                bg_ag = _mm512_add_epi8(fg_ag, bg_ag);
 
-                res = _mm512_or_epi32(res, _mm512_maskz_mov_epi8(~mask, res_ag));
-                _mm512_storeu_si512((__m512i*)&result->pixels[y*backgr->info.w + x], res);     //put res in memory
+                bg = _mm512_shuffle_epi8(bg, k0To1And2To3);
+
+                bg = _mm512_or_epi32(bg, _mm512_maskz_mov_epi8(~kGetEverySecFromFirst, bg_ag));
+                _mm512_storeu_si512((__m512i*)&result->pixels[y*backgr->info.w + x], bg);     //put res in memory
             }
         }
     }
 }
-
 
 static void Printfm512i(__m512i a)
 {

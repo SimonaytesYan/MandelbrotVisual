@@ -7,8 +7,11 @@ debug: debug_man_set debug_alpha_blending debug_parse_bmp debug_calloc
 	g++ $(DEBUG_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
 fast: fast_man_set fast_alpha_blending fast_parse_bmp fast_calloc
 	g++ $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
-avx: fast_calloc fast_parse_bmp fast_alpha_blending_AVX
-	g++ $(FAST_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/AlphaBlendingAVX.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
+avx: fast_calloc fast_parse_bmp fast_alpha_blending_AVX fast_alpha_blending
+	g++ $(FAST_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/AlphaBlendingAVX.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
+avx_debug: debug_calloc debug_parse_bmp debug_alpha_blending_AVX
+	g++ $(DEBUG_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/AlphaBlendingAVX.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
+	
 
 debug_alpha_blending: debug_calloc fast_parse_bmp fast_calloc
 	g++ -c $(DEBUG_FLAGS) Src/Libs/AlphaBlending/AlphaBlending.cpp Obj/AlignedCalloc.o -o Obj/AlphaBlending.o
