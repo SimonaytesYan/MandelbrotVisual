@@ -10,7 +10,6 @@
 #include "../AlignedCalloc/AlignedCalloc.h"
 #include "../Stopwatch.h"
 
-#define DRAW
 //#define DEBUG
 
 const __m512i k0To1And2To3 = _mm512_set_epi8(0x80, 63, 0x80, 61,
@@ -324,6 +323,4 @@ static void Printfm512i(__m512i a)
     unsigned int* part_a = (unsigned int*)(&a);
     for (int i = 0; i < 16; i++)
         printf("[%08x]", part_a[i]);
-    
-    //printf("[ind] = %x\n", a);    
 }

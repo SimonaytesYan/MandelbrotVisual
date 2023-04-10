@@ -22,7 +22,9 @@ double CulcADnPrintfStdDeviation(const double fps[], const size_t number_meas);
 
 int main()
 {
-    MakeAlphaBlending("Images/Forest.bmp", "Images/BigCat.bmp");
+    MandelbrotParams params = {};
+    DrawMandelbrotSet(params);
+    //MakeAlphaBlending("Images/Forest.bmp", "Images/BigCat.bmp");
 }
 
 void MakeAlphaBlending(const char* background_path, const  char* foreground_path)
@@ -57,12 +59,12 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
         InitTimer();
         StartTimer();
         //AlphaBlendingAVX512(&result, &background, &foreground, kTimeCalcAlphaBlend);
-        //AlphaBlendingV1(&result, &background, &foreground, kTimeCalcAlphaBlend);
-        AlphaBlendingAVX512_V2(&result, &background, &foreground, kTimeCalcAlphaBlend);
+        AlphaBlendingV1(&result, &background, &foreground, kTimeCalcAlphaBlend);
+        //AlphaBlendingAVX512_V2(&result, &background, &foreground, kTimeCalcAlphaBlend);
         StopTimer();
 
-        double last_fps  = 1/(double)GetTimerMicroseconds()* 1000. * (double)kTimeCalcAlphaBlend;
-        fps[numbr_meas]  = last_fps;
+        double last_fps = 1/(double)GetTimerMicroseconds()* 1000. * (double)kTimeCalcAlphaBlend;
+        fps[numbr_meas] = last_fps;
         numbr_meas++;
         if (numbr_meas == kNumberMeas)
             CulcADnPrintfStdDeviation(fps, numbr_meas);
@@ -105,7 +107,7 @@ void   DrawImage(sf::RenderWindow* window, Image_t* result, sf::Sprite* sprite, 
     }
 
     window->clear();
-    
+
     image_texture->loadFromImage(res_image);
     sprite->setTexture(*image_texture);
     sprite->setScale(sf::Vector2f(window->getSize().x / (float)result->info.w, 

@@ -10,7 +10,8 @@
 //#define DEBUG
 
 //==============================TESTING CONSTS==================================
-const size_t kTimeCalcMandelbrotSet = 1;
+const size_t kTimeCalcMandelbrotSet = 10;
+const size_t kNumberMeas            = 10;        
 
 //==============================WINDOW CONSTS===================================
 const size_t kMaxFpsStrLen   = 20;
@@ -28,6 +29,8 @@ static        sf::Color StepToColor(size_t step);
 static        void      ProcessSetMoving(MandelbrotParams *params);
 static        void      UpdateFpsViewer(sf::Text *fps_counter, float fps);
 static inline float     GetDelta(float to, float from, size_t steps);
+double                  CulcADnPrintfStdDeviationMandel(const double fps[], const size_t number_meas);
+
 
 //==============================FOR WRAPERS======================================
 static inline void mm_set_ps1(float* A, const float  elem) {for(int i = 0; i < 4; i++) A[i] = elem;}
@@ -53,14 +56,27 @@ void DrawMandelbrotSet(MandelbrotParams params)
     fps_counter.setFillColor(sf::Color::White);
     fps_counter.setPosition(0, 0);
 
+
+    size_t numbr_meas = 0;
+    double fps[kNumberMeas] = {0};
+
     InitTimer();
 
     while (window.isOpen())
     {
         StartTimer();
-        //ConstructMandelbrotV1(&image, &params);
+        //ConstructMandelbrotSSE(&image, &params);
         ConstructMandelbrotAVX512(&image, &params);
         StopTimer();
+
+        double last_fps = 1/(double)GetTimerMicroseconds()* 1000. * (double)kTimeCalcMandelbrotSet;
+        fps[numbr_meas] = last_fps;
+        numbr_meas++;
+        if (numbr_meas == kNumberMeas)
+        {
+            CulcADnPrintfStdDeviationMandel(fps, numbr_meas);
+            numbr_meas = 0;
+        }
 
         #ifdef DRAW
             sf::Event event;
@@ -83,7 +99,7 @@ void DrawMandelbrotSet(MandelbrotParams params)
                         break;
                 }
             }
-            UpdateFpsViewer(&fps_counter, ((1/(float)(GetTimerMicroseconds())) * 1000000. * (double)kTimeCalcMandelbrotSet));
+            UpdateFpsViewer(&fps_counter, ((1/(float)(GetTimerMicroseconds())) * 1000. * (double)kTimeCalcMandelbrotSet));
 
             window.clear();
             image_texture.loadFromImage(image);
@@ -467,4 +483,24 @@ static void ProcessSetMoving(MandelbrotParams *params)
         params->set_border.LeftBoder   -= kZoomSpeed * sqrt(params->zoom_lvl);
         params->zoom_lvl *= 1.065;
     }
+}
+
+double CulcADnPrintfStdDeviationMandel(const double fps[], const size_t number_meas)
+{
+    double sum_fps = 0;
+    for (int i = 0; i < kNumberMeas; i++)
+        sum_fps += fps[i];
+
+    double av_fps        = sum_fps/number_meas;
+    double std_deviation = 0;
+
+    for (int i = 0; i < kNumberMeas; i++)
+        std_deviation += (fps[i] - av_fps) * (fps[i] - av_fps);
+    std_deviation /= (double)(kNumberMeas - 1);
+
+    std_deviation = sqrt(std_deviation);
+    printf("av_fps        = %lg\n", av_fps);
+    printf("std_deviation = %lg\n", std_deviation);
+
+    return std_deviation;
 }
