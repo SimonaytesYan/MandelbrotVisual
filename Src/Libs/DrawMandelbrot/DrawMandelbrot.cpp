@@ -31,7 +31,6 @@ static        void      UpdateFpsViewer(sf::Text *fps_counter, float fps);
 static inline float     GetDelta(float to, float from, size_t steps);
 double                  CulcADnPrintfStdDeviationMandel(const double fps[], const size_t number_meas);
 
-
 //==============================FOR WRAPERS======================================
 static inline void mm_set_ps1(float* A, const float  elem) {for(int i = 0; i < 4; i++) A[i] = elem;}
 static inline void mm_mul_ps (float* A, const float* B)    {for(int i = 0; i < 4; i++) A[i] = A[i] * B[i];}
@@ -39,6 +38,7 @@ static inline void mm_add_ps (float* A, const float* B)    {for(int i = 0; i < 4
 static inline void mm_sub_ps (float* A, const float* B)    {for(int i = 0; i < 4; i++) A[i] = A[i] - B[i];}
 static inline void mm_mov_ps (float* A, const float* B)    {for(int i = 0; i < 4; i++) A[i] = B[i];}
 
+//============================FUNCTIONS IMPLEMENTATIONS=========================
 void DrawMandelbrotSet(MandelbrotParams params)
 {
     sf::RenderWindow window(sf::VideoMode(params.image_width, params.image_height), kWindowHeader, sf::Style::Default);
@@ -55,7 +55,6 @@ void DrawMandelbrotSet(MandelbrotParams params)
     fps_counter.setFont(font);
     fps_counter.setFillColor(sf::Color::White);
     fps_counter.setPosition(0, 0);
-
 
     size_t numbr_meas = 0;
     double fps[kNumberMeas] = {0};

@@ -4,7 +4,7 @@
 //!
 //!@return aligned address
 //!
-void* AlignedCalloc(void** addres, const size_t size, const size_t alignment);
-void AlignedFree(void* addres);
+void* AlignedCalloc(void** address, const size_t size, const size_t alignment);
+void AlignedFree(void* address);
 
 #endif

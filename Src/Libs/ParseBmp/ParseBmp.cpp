@@ -119,6 +119,16 @@ static void GetBmpFileInfo(BmpFileInfo* result, const char* file_path)
     close(fd);  
 }
 
+void ImageCtor(Image_t* object, size_t height, size_t width, size_t pixel_size, size_t alignment)
+{
+    object->info.pixel_size = pixel_size;
+    object->info.h          = height;
+    object->info.w          = width;
+    object->pixels          = (Pixel_t*)AlignedCalloc((void**)&object->real_array_ptr, 
+                                                      sizeof(char) * pixel_size * height * width, alignment);
+    
+}
+
 static long int GetTextSize(const char *file_name)
 {
     struct stat buff = {};

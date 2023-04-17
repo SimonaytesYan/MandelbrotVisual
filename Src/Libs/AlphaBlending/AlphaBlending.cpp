@@ -10,7 +10,6 @@
 #include "../AlignedCalloc/AlignedCalloc.h"
 #include "../Stopwatch.h"
 
-#define DRAW
 //#define DEBUG
 
 sf::Image AlphaBlendingV0(sf::Image background, sf::Image foreground)
@@ -56,15 +55,18 @@ void AlphaBlendingV1(Image_t* result, const Image_t* background, const Image_t* 
     result->pixels = (Pixel_t*)realloc(result->pixels, sizeof(Pixel_t) * background->info.h * background->info.w);
     result->info.h = background->info.h;
     result->info.w = background->info.w; 
-
     memcpy(result->pixels, background->pixels, sizeof(Pixel_t) * background->info.h * background->info.w);
 
+    static size_t numbr_meas = 0;
+    static double sum_time   = 0;
     for (size_t t = 0; t < kTimeCalcAlphaBlend; t++)
     {
+        clock_t startTime = clock();
         for (size_t y = 0; y < foreground->info.h; y++)
         {
             for (size_t x = 0; x < foreground->info.w; x++)
             {
+                
                 Pixel_t res_pixel;
                 Pixel_t fg = foreground->pixels[y * foreground->info.w + x];
                 Pixel_t bg = background->pixels[y * background->info.w + x];
@@ -75,6 +77,18 @@ void AlphaBlendingV1(Image_t* result, const Image_t* background, const Image_t* 
 
                 result->pixels[y * background->info.w + x] = res_pixel;
             }
+            
+        }
+
+        numbr_meas++;
+        double last_time = clock() - startTime;
+
+        sum_time += last_time;
+        if (numbr_meas % 50 == 0)
+        {
+            printf("av = %lf\n", sum_time / numbr_meas);
+            sum_time   = 0;
+            numbr_meas = 0;
         }
     }
 }

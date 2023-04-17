@@ -27,5 +27,6 @@ struct Image_t
 };
 
 void GetImageFromBMP(Image_t* image, const char* file_path, size_t alignment = 1);
+void ImageCtor(Image_t* object, size_t height, size_t width, size_t pixel_size, size_t alignment = 1);
 
 #endif
