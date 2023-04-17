@@ -75,9 +75,9 @@ void MakeAlphaBlending(const char* background_path, const  char* foreground_path
     {    
         InitTimer();
         StartTimer();
-        //AlphaBlendingV1    (&result, &background, &foreground, kTimeCalcAlphaBlend);
+        AlphaBlendingV1    (&result, &background, &foreground, kTimeCalcAlphaBlend);
         //AlphaBlendingAVX256(&result, &background, &foreground, kTimeCalcAlphaBlend);
-        AlphaBlendingAVX512_V2(&result, &background, &foreground, kTimeCalcAlphaBlend);
+        //AlphaBlendingAVX512_V2(&result, &background, &foreground, kTimeCalcAlphaBlend);
         StopTimer();
 
         double last_fps = 1/(double)GetTimerMicroseconds()* 1000. * (double)kTimeCalcAlphaBlend;
