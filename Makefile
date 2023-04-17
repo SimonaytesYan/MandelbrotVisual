@@ -7,8 +7,8 @@ SFML_FLAGS    = -lsfml-graphics -lsfml-window -lsfml-system
 
 debug: debug_man_set debug_alpha_blending debug_parse_bmp debug_calloc debug_man_set
 	g++ $(DEBUG_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
-fast: fast_man_set fast_alpha_blending fast_parse_bmp fast_calloc
-	g++ $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
+fast: fast_alpha_blending fast_parse_bmp fast_calloc
+	g++ $(FAST_FLAGS) Src/main.cpp Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
 avx: fast_calloc fast_parse_bmp fast_alpha_blending_AVX fast_alpha_blending fast_man_set
 	g++ $(FAST_FLAGS) $(AVX_512_FLAGS) Src/main.cpp Obj/AlphaBlendingAVX.o Obj/AlphaBlending.o Obj/ParseBmp.o Obj/AlignedCalloc.o -o Exe/Run $(SFML_FLAGS)
 avx_debug: debug_calloc debug_parse_bmp debug_alpha_blending_AVX debug_man_set
