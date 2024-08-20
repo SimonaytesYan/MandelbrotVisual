@@ -455,7 +455,7 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
                 }
             }
 
-            for (int i = 0; i < 16; i++)
+            for (int i = 0; i < param_number; i++)
             {
                 if (steps[i])
                     image->setPixel(pixel_x + i, pixel_y, StepToColor(steps[i]));
