@@ -416,20 +416,21 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
 {
     const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
     const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
-    const v64f radius_2m512 = VECTOR_F_CONSTANT(params->radius_2);
+    const v64f   radius_2m512 = VECTOR_F_CONSTANT(params->radius_2);
+    const size_t param_number = sizeof(v64i) / sizeof(int);
 
     float y0 = params->set_border.BottomBoder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
         float x0 = params->set_border.LeftBoder;
-        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += 16, x0 += 16*kDeltaX)
+        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += param_number, x0 += param_number*kDeltaX)
         {
             v64i steps = {0};
             for(int T = 0; T < kTimeCalcMandelbrotSet; T++)
             {
                 v64f X0 = VECTOR_F_CONSTANT(x0) + _151413 * VECTOR_F_CONSTANT(kDeltaX);
 
-                v64f Y0 = _mm512_set1_ps(y0);
+                v64f Y0 = VECTOR_F_CONSTANT(y0);
                 v64f X  = X0;
                 v64f Y  = Y0;
 
