@@ -408,21 +408,7 @@ void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
 typedef float v64f __attribute__((vector_size(64)));
 typedef int v64i __attribute__((vector_size(64)));
 
-const v64i kVectorZero = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-const v64i kVectorOne  = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-
-#define VECTOR_CONSTANT(a) {a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a}
-
-void printVector(v64i vector)
-{
-    printf("{");
-    for (int i = 0; i < sizeof(vector) / sizeof(int); i++) {
-        if (i != 0)
-            printf(", ");
-        printf("%d", vector[i]);
-    }
-    printf("}");
-}
+#define VECTOR_CONSTANT(a) (v64i){a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a}
 
 //======================VERSION 6=====================
 void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* params)
@@ -446,7 +432,7 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
                 v64f X  = X0;
                 v64f Y  = Y0;
 
-                steps = kVectorZero;
+                steps = VECTOR_CONSTANT(0);
 
                 for (int n = 0; n < params->iterations; n++)
                 {
@@ -459,7 +445,7 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
                     v64i cmp = (radius_2 < radius_2m512) * -1;
                     steps = steps + cmp;
 
-                    if (_mm512_cmp_epi32_mask(cmp, kVectorZero, _CMP_NEQ_UQ) == 0)
+                    if (_mm512_cmp_epi32_mask(cmp, VECTOR_CONSTANT(0), _CMP_NEQ_UQ) == 0)
                         break;
                         
                     X = XX - YY + X0;
