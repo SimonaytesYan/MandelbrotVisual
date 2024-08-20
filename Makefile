@@ -3,6 +3,10 @@ FAST_FLAGS  = -O3 -msse4.2
 AVX_512_FLAGS = -march=sandybridge -march=haswell -march=knl -flax-vector-conversions
 SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 
+avx512: prepare
+	g++ -c $(AVX_512_FLAGS) $(FAST_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	g++ $(AVX_512_FLAGS) $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o -o Exe/DrawMandel $(SFML_FLAGS)
+
 debug: prepare
 	g++ -c $(DEBUG_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 	g++ $(DEBUG_FLAGS) Src/main.cpp DrawMandel.o -o $(SFML_FLAGS) Exe/DrawMandel
@@ -10,10 +14,6 @@ debug: prepare
 fast: prepare
 	g++ -c $(FAST_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 	g++ $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o -o Exe/DrawMandel $(SFML_FLAGS)
-
-avx512: prepare
-	g++ -c $(AVX_512_FLAGS) $(FAST_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	g++ $(AVX_512_FLAGS) $(FAST_FLAGS) Src/main.cpp Obj/DrawMandel.o -o Exe/DrawMandel $(SFML_FLAGS)
 
 run:
 	Exe/DrawMandel
