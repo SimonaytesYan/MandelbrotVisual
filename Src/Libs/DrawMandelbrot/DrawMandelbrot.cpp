@@ -59,7 +59,8 @@ void DrawMandelbrotSet(MandelbrotParams params)
     {
         StartTimer();
         //ConstructMandelbrotV1(&image, &params);
-        ConstructMandelbrotAVX512(&image, &params);
+        // ConstructMandelbrotAVX512(&image, &params);
+        ConstructMandelbrotAVX512UsefulFormat(&image, &params);
         StopTimer();
 
         #ifdef DRAW
@@ -399,6 +400,77 @@ void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
                 #endif
                 if (step_int[i])
                     image->setPixel(pixel_x + i, pixel_y, StepToColor(step_int[i]));
+            }           
+        }
+    }
+}
+
+typedef float v64f __attribute__((vector_size(64)));
+typedef int v64i __attribute__((vector_size(64)));
+
+const v64i kVectorZero = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const v64i kVectorOne  = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
+#define VECTOR_CONSTANT(a) {a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a}
+
+void printVector(v64i vector)
+{
+    printf("{");
+    for (int i = 0; i < sizeof(vector) / sizeof(int); i++) {
+        if (i != 0)
+            printf(", ");
+        printf("%d", vector[i]);
+    }
+    printf("}");
+}
+
+//======================VERSION 6=====================
+void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* params)
+{
+    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const v64f radius_2m512 = VECTOR_CONSTANT(params->radius_2);
+
+    float y0 = params->set_border.BottomBoder;
+    for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
+    {
+        float x0 = params->set_border.LeftBoder;
+        for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += 16, x0 += 16*kDeltaX)
+        {
+            v64i steps = {0};
+            for(int T = 0; T < kTimeCalcMandelbrotSet; T++)
+            {
+                v64f X0 = _mm512_add_ps(_mm512_set1_ps(x0), _mm512_mul_ps(_151413, _mm512_set1_ps(kDeltaX)));
+
+                v64f Y0 = _mm512_set1_ps(y0);
+                v64f X  = X0;
+                v64f Y  = Y0;
+
+                steps = kVectorZero;
+
+                for (int n = 0; n < params->iterations; n++)
+                {
+                    v64f XX = X * X;
+                    v64f YY = Y * Y;
+                    v64f XY = X * Y;
+    
+                    v64f radius_2 = XX + YY;
+
+                    v64i cmp = (radius_2 < radius_2m512) * -1;
+                    steps = steps + cmp;
+
+                    if (_mm512_cmp_epi32_mask(cmp, kVectorZero, _CMP_NEQ_UQ) == 0)
+                        break;
+                        
+                    X = XX - YY + X0;
+                    Y = XY + XY + Y0;
+                }
+            }
+
+            for (int i = 0; i < 16; i++)
+            {
+                if (steps[i])
+                    image->setPixel(pixel_x + i, pixel_y, StepToColor(steps[i]));
             }           
         }
     }
