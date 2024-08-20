@@ -408,14 +408,15 @@ void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
 typedef float v64f __attribute__((vector_size(64)));
 typedef int v64i __attribute__((vector_size(64)));
 
-#define VECTOR_CONSTANT(a) (v64i){a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a}
+#define VECTOR_I_CONSTANT(a) (v64i){a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a}
+#define VECTOR_F_CONSTANT(a) (v64f){a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a}
 
 //======================VERSION 6=====================
 void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* params)
 {
     const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
     const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
-    const v64f radius_2m512 = VECTOR_CONSTANT(params->radius_2);
+    const v64f radius_2m512 = VECTOR_F_CONSTANT(params->radius_2);
 
     float y0 = params->set_border.BottomBoder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
@@ -426,13 +427,13 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
             v64i steps = {0};
             for(int T = 0; T < kTimeCalcMandelbrotSet; T++)
             {
-                v64f X0 = _mm512_add_ps(_mm512_set1_ps(x0), _mm512_mul_ps(_151413, _mm512_set1_ps(kDeltaX)));
+                v64f X0 = VECTOR_F_CONSTANT(x0) + _151413 * VECTOR_F_CONSTANT(kDeltaX);
 
                 v64f Y0 = _mm512_set1_ps(y0);
                 v64f X  = X0;
                 v64f Y  = Y0;
 
-                steps = VECTOR_CONSTANT(0);
+                steps = VECTOR_I_CONSTANT(0);
 
                 for (int n = 0; n < params->iterations; n++)
                 {
@@ -445,7 +446,7 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
                     v64i cmp = (radius_2 < radius_2m512) * -1;
                     steps = steps + cmp;
 
-                    if (_mm512_cmp_epi32_mask(cmp, VECTOR_CONSTANT(0), _CMP_NEQ_UQ) == 0)
+                    if (_mm512_cmp_epi32_mask(cmp, VECTOR_I_CONSTANT(0), _CMP_NEQ_UQ) == 0)
                         break;
                         
                     X = XX - YY + X0;
