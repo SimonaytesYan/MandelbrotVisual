@@ -512,19 +512,23 @@ static void ProcessSetMoving(MandelbrotParams *params)
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
     {
-        params->set_border.UpBoder     -= kZoomSpeed * sqrt(params->zoom_lvl);
-        params->set_border.BottomBoder += kZoomSpeed * sqrt(params->zoom_lvl);
-        params->set_border.RightBoder  -= kZoomSpeed * sqrt(params->zoom_lvl);
-        params->set_border.LeftBoder   += kZoomSpeed * sqrt(params->zoom_lvl);
-        params->zoom_lvl /= 1.065;
+        const double height_width_coefficient = (params->set_border.UpBoder - params->set_border.BottomBoder) / 
+                                                (params->set_border.RightBoder - params->set_border.LeftBoder);
+
+        params->set_border.UpBoder     -= kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.BottomBoder += kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.RightBoder  -= kZoomSpeed * params->zoom_lvl;
+        params->set_border.LeftBoder   += kZoomSpeed * params->zoom_lvl;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
     {
-        params->set_border.UpBoder     += kZoomSpeed * sqrt(params->zoom_lvl);
-        params->set_border.BottomBoder -= kZoomSpeed * sqrt(params->zoom_lvl);
-        params->set_border.RightBoder  += kZoomSpeed * sqrt(params->zoom_lvl);
-        params->set_border.LeftBoder   -= kZoomSpeed * sqrt(params->zoom_lvl);
-        params->zoom_lvl *= 1.065;
+        const double height_width_coefficient = (params->set_border.UpBoder - params->set_border.BottomBoder) / 
+                                                (params->set_border.RightBoder - params->set_border.LeftBoder);
+
+        params->set_border.UpBoder     += kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.BottomBoder -= kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.RightBoder  += kZoomSpeed * params->zoom_lvl;
+        params->set_border.LeftBoder   -= kZoomSpeed * params->zoom_lvl;
     }
 }
