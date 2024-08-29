@@ -397,7 +397,6 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
 }
 #endif // AVX512
 
-
 size_t RunVersion(sf::Image* image, MandelbrotParams* params) {    
     InitTimer();
 
