@@ -20,16 +20,21 @@ sse: prepare Obj/main.o
 
 without_simd: prepare Obj/main.o 
 	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-
-Obj/main.o: Src/main.cpp
-	g++ -c Src/main.cpp -o Obj/main.o
+	$(call link)
 
 debug: prepare
 	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 	$(call link)
 
+Obj/main.o: Src/main.cpp
+	g++ -c Src/main.cpp -o Obj/main.o
+
 run:
 	$(BIN)
+
+clean:
+	rm  Obj/*.o
+	rm $(BIN)
 
 prepare:
 	-mkdir Obj

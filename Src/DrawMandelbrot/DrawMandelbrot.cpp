@@ -100,6 +100,7 @@ size_t RunVersion(sf::Image* image, MandelbrotParams* params) {
         ConstructMandelbrotV1(image, params);
     #else 
         #ifdef AVX256
+            printf("avx256\n");
             ConstructMandelbrotSSE(image, params);
         #else 
             #ifdef AVX512
@@ -115,13 +116,13 @@ size_t RunVersion(sf::Image* image, MandelbrotParams* params) {
 //======================VERSION 1=====================
 void ConstructMandelbrotV1(sf::Image* image, MandelbrotParams* params)
 {
-    const float kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float kDeltaX = GetDelta(params->set_border.LeftBorder,   params->set_border.RightBorder, params->image_width);
+    const float kDeltaY = GetDelta(params->set_border.BottomBorder, params->set_border.UpBorder,    params->image_height);
 
-    float x0 = params->set_border.LeftBoder;
+    float x0 = params->set_border.LeftBorder;
     for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x++, x0 += kDeltaX)
     {
-        float y0 = params->set_border.BottomBoder;
+        float y0 = params->set_border.BottomBorder;
         for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
         {
             bool draw_pixel = true;
@@ -161,13 +162,13 @@ void ConstructMandelbrotV1(sf::Image* image, MandelbrotParams* params)
 //======================VERSION 2=====================
 void ConstructMandelbrotV2(sf::Image* image, MandelbrotParams* params)
 {
-    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float  kDeltaX = GetDelta(params->set_border.LeftBorder,   params->set_border.RightBorder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBorder, params->set_border.UpBorder,    params->image_height);
 
-    float y0 = params->set_border.BottomBoder;
+    float y0 = params->set_border.BottomBorder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = params->set_border.LeftBoder;
+        float x0 = params->set_border.LeftBorder;
         for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x+=4, x0 += 4*kDeltaX)
         {
             int draw_pixel = 0b1111;
@@ -218,13 +219,13 @@ void ConstructMandelbrotV2(sf::Image* image, MandelbrotParams* params)
 //======================VERSION 3=====================
 void ConstructMandelbrotV3(sf::Image* image, MandelbrotParams* params)
 {
-    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float  kDeltaX = GetDelta(params->set_border.LeftBorder,   params->set_border.RightBorder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBorder, params->set_border.UpBorder,    params->image_height);
 
-    float y0 = params->set_border.BottomBoder;
+    float y0 = params->set_border.BottomBorder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = params->set_border.LeftBoder;
+        float x0 = params->set_border.LeftBorder;
         for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x+=4, x0 += 4*kDeltaX)
         {
             int draw_pixel = 0b1111;
@@ -298,14 +299,14 @@ void ConstructMandelbrotV3(sf::Image* image, MandelbrotParams* params)
 //======================VERSION 4=====================
 void ConstructMandelbrotSSE(sf::Image* image, MandelbrotParams* params)
 {
-    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float  kDeltaX = GetDelta(params->set_border.LeftBorder,   params->set_border.RightBorder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBorder, params->set_border.UpBorder,    params->image_height);
     const __m128 radius_2m128 = _mm_set1_ps(params->radius_2);
 
-    float y0 = params->set_border.BottomBoder;
+    float y0 = params->set_border.BottomBorder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = params->set_border.LeftBoder;
+        float x0 = params->set_border.LeftBorder;
         for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += 4, x0 += 4*kDeltaX)
         {
             __m128i steps = _mm_setzero_si128();
@@ -358,14 +359,14 @@ void ConstructMandelbrotSSE(sf::Image* image, MandelbrotParams* params)
 //======================VERSION 5=====================
 void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
 {
-    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float  kDeltaX = GetDelta(params->set_border.LeftBorder,   params->set_border.RightBorder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBorder, params->set_border.UpBorder,    params->image_height);
     const __m512 radius_2m512 = _mm512_set1_ps(params->radius_2);
 
-    float y0 = params->set_border.BottomBoder;
+    float y0 = params->set_border.BottomBorder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = params->set_border.LeftBoder;
+        float x0 = params->set_border.LeftBorder;
         for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += 16, x0 += 16*kDeltaX)
         {
             __m512i steps = _mm512_setzero_si512();
@@ -436,15 +437,15 @@ typedef int v64i __attribute__((vector_size(64)));
 //======================VERSION 6=====================
 void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* params)
 {
-    const float  kDeltaX = GetDelta(params->set_border.LeftBoder,   params->set_border.RightBoder, params->image_width);
-    const float  kDeltaY = GetDelta(params->set_border.BottomBoder, params->set_border.UpBoder,    params->image_height);
+    const float  kDeltaX = GetDelta(params->set_border.LeftBorder,   params->set_border.RightBorder, params->image_width);
+    const float  kDeltaY = GetDelta(params->set_border.BottomBorder, params->set_border.UpBorder,    params->image_height);
     const v64f   radius_2m512 = VECTOR_F_CONSTANT(params->radius_2);
     const size_t param_number = sizeof(v64i) / sizeof(int);
 
-    float y0 = params->set_border.BottomBoder;
+    float y0 = params->set_border.BottomBorder;
     for(size_t pixel_y = 0; pixel_y < params->image_height; pixel_y++, y0 += kDeltaY)
     {
-        float x0 = params->set_border.LeftBoder;
+        float x0 = params->set_border.LeftBorder;
         for (size_t pixel_x = 0; pixel_x < params->image_width; pixel_x += param_number, x0 += param_number*kDeltaX)
         {
             v64i steps = {0};
@@ -515,47 +516,47 @@ static void ProcessSetMoving(MandelbrotParams *params)
 {
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
     {
-        params->set_border.LeftBoder  -= kMovingSpeed*params->zoom_lvl;
-        params->set_border.RightBoder -= kMovingSpeed*params->zoom_lvl;
+        params->set_border.LeftBorder  -= kMovingSpeed*params->zoom_lvl;
+        params->set_border.RightBorder -= kMovingSpeed*params->zoom_lvl;
     }
         
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
     {
-        params->set_border.LeftBoder  += kMovingSpeed*params->zoom_lvl;
-        params->set_border.RightBoder += kMovingSpeed*params->zoom_lvl;
+        params->set_border.LeftBorder  += kMovingSpeed*params->zoom_lvl;
+        params->set_border.RightBorder += kMovingSpeed*params->zoom_lvl;
     }
         
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
     {
-        params->set_border.UpBoder     -= kMovingSpeed*params->zoom_lvl;
-        params->set_border.BottomBoder -= kMovingSpeed*params->zoom_lvl;
+        params->set_border.UpBorder     -= kMovingSpeed*params->zoom_lvl;
+        params->set_border.BottomBorder -= kMovingSpeed*params->zoom_lvl;
     }
         
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
     {
-        params->set_border.UpBoder     += kMovingSpeed*params->zoom_lvl;
-        params->set_border.BottomBoder += kMovingSpeed*params->zoom_lvl;
+        params->set_border.UpBorder     += kMovingSpeed*params->zoom_lvl;
+        params->set_border.BottomBorder += kMovingSpeed*params->zoom_lvl;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
     {
-        const double height_width_coefficient = (params->set_border.UpBoder - params->set_border.BottomBoder) / 
-                                                (params->set_border.RightBoder - params->set_border.LeftBoder);
+        const double height_width_coefficient = (params->set_border.UpBorder - params->set_border.BottomBorder) / 
+                                                (params->set_border.RightBorder - params->set_border.LeftBorder);
 
-        params->set_border.UpBoder     -= kZoomSpeed * params->zoom_lvl * height_width_coefficient;
-        params->set_border.BottomBoder += kZoomSpeed * params->zoom_lvl * height_width_coefficient;
-        params->set_border.RightBoder  -= kZoomSpeed * params->zoom_lvl;
-        params->set_border.LeftBoder   += kZoomSpeed * params->zoom_lvl;
+        params->set_border.UpBorder     -= kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.BottomBorder += kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.RightBorder  -= kZoomSpeed * params->zoom_lvl;
+        params->set_border.LeftBorder   += kZoomSpeed * params->zoom_lvl;
     }
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
     {
-        const double height_width_coefficient = (params->set_border.UpBoder - params->set_border.BottomBoder) / 
-                                                (params->set_border.RightBoder - params->set_border.LeftBoder);
+        const double height_width_coefficient = (params->set_border.UpBorder - params->set_border.BottomBorder) / 
+                                                (params->set_border.RightBorder - params->set_border.LeftBorder);
 
-        params->set_border.UpBoder     += kZoomSpeed * params->zoom_lvl * height_width_coefficient;
-        params->set_border.BottomBoder -= kZoomSpeed * params->zoom_lvl * height_width_coefficient;
-        params->set_border.RightBoder  += kZoomSpeed * params->zoom_lvl;
-        params->set_border.LeftBoder   -= kZoomSpeed * params->zoom_lvl;
+        params->set_border.UpBorder     += kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.BottomBorder -= kZoomSpeed * params->zoom_lvl * height_width_coefficient;
+        params->set_border.RightBorder  += kZoomSpeed * params->zoom_lvl;
+        params->set_border.LeftBorder   -= kZoomSpeed * params->zoom_lvl;
     }
 }
