@@ -1,7 +1,32 @@
-# Mandelbrot set visualisation #
+# Mandelbrot set visualization #
+
+This program created to test SIMD instructions. It calculate Mandelbrot and visualize Mandelbrot set using SFML. 
+Every frame set have be recalculate and print FPS 
 
 ![Mandelbrot set](/Output/MandelbrotImage.png)
 
+## How to build project ##
+To build project with using avx512 you should run
+```
+make avx512
+```
+To build project with using sse 4.2 you should run
+```
+make sse
+```
+To build project without using simd you should run
+```
+make without_simd
+```
+To build project with debug flags you should run
+```
+make debug
+```
+
+To run project run
+```
+make run
+```
 
 ## Hot keys ##
 **WASD**   - moving\
@@ -19,6 +44,7 @@
     All *.0 versions compile without optimisation flags
 
 ## Results ##
+All results calculate without `DRAW` define, so mandelbrot set didn`t vi 
 Version | Stage                                                | FPS   
 --------|------------------------------------------------------|:-----
 1.0     | Without any optimizations + debug flags              | **5-6**
