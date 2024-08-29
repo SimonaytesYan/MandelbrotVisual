@@ -4,19 +4,21 @@ AVX_256_FLAGS = -O3 -DAVX256 -msse4.2
 AVX_512_FLAGS = -O3 -DAVX512 -march=sandybridge -march=haswell -march=knl -flax-vector-conversions
 SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 
-BIN = Exe/DrawMandelbrotSet
+BIN = Exe/DrawMandelbrot
+COMMON_OBJ = Obj/main.o Obj/DrawMandelbrot.o
 
-avx512: prepare Obj/main.o Obj/DrawMandelAVX512.o
-	g++ Obj/main.o Obj/DrawMandelAVX512.o -o $(BIN) $(SFML_FLAGS)
+avx512: prepare $(COMMON_OBJ) Obj/CalcMandelAVX512.o
+	g++ $(COMMON_OBJ) Obj/CalcMandelAVX512.o -o $(BIN) $(SFML_FLAGS)
 
-sse: prepare Obj/main.o Obj/DrawMandelAVX256.o
-	g++ Obj/main.o Obj/DrawMandelAVX256.o -o $(BIN) $(SFML_FLAGS)
+sse: prepare Obj/CalcMandelAVX256.o $(COMMON_OBJ)
+	g++ $(COMMON_OBJ) Obj/CalcMandelAVX256.o -o $(BIN) $(SFML_FLAGS)
 
-without_simd: prepare Obj/main.o Obj/DrawMandel.o
-	g++ Obj/main.o Obj/DrawMandel.o -o $(BIN) $(SFML_FLAGS)
+without_simd: prepare Obj/CalcMandel.o $(COMMON_OBJ)
+	g++ $(COMMON_OBJ) Obj/CalcMandel.o -o $(BIN) $(SFML_FLAGS)
 
-debug: prepare Obj/mainDebug.o Obj/DrawMandelDebug.o
-	g++ $(DEBUG_FLAGS) Obj/mainDebug.o Obj/DrawMandelDebug.o -o $(BIN) $(SFML_FLAGS)
+debug: prepare Obj/mainDebug.o Obj/CalcMandelDebug.o Obj/DrawMandelbrotDebug.o
+	g++ $(DEBUG_FLAGS) Obj/mainDebug.o Obj/CalcMandelDebug.o Obj/DrawMandelbrotDebug.o -o $(BIN) $(SFML_FLAGS)
+
 
 Obj/main.o: Src/main.cpp
 	g++ -c Src/main.cpp -o Obj/main.o
@@ -24,17 +26,26 @@ Obj/main.o: Src/main.cpp
 Obj/mainDebug.o: Src/main.cpp
 	g++ -c $(DEBUG_FLAGS) Src/main.cpp -o Obj/mainDebug.o
 
-Obj/DrawMandelAVX512.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
-	g++ -c $(AVX_512_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelAVX512.o
 
-Obj/DrawMandelAVX256.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
-	g++ -c $(AVX_256_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelAVX256.o
+Obj/DrawMandelbrot.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelbrot.o
 
-Obj/DrawMandel.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
-	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+Obj/DrawMandelbrotDebug.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelbrotDebug.o
 
-Obj/DrawMandelDebug.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
-	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelDebug.o
+
+Obj/CalcMandelAVX512.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+	g++ -c $(AVX_512_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandelAVX512.o
+
+Obj/CalcMandelAVX256.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+	g++ -c $(AVX_256_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandelAVX256.o
+
+Obj/CalcMandel.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+	g++ -c $(RELEASE_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandel.o
+
+Obj/CalcMandelDebug.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+	g++ -c $(DEBUG_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandelDebug.o
+
 
 run:
 	$(BIN)
@@ -45,4 +56,4 @@ clean:
 
 prepare:
 	-mkdir Obj
-	-mkdir Exe 
+	-mkdir Exe

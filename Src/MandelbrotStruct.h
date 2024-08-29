@@ -21,4 +21,6 @@ struct MandelbrotParams
     double    zoom_lvl     = 1;                  //! this parameter uses in moving 
 };
 
+const size_t kTimeCalcMandelbrotSet = 1;
+
 #endif // MANDELBROT_STRUCT
