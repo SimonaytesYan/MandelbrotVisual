@@ -20,14 +20,14 @@ const char   kWindowHeader[] = "Mandelbrot set";
 const float   kMovingSpeed = 0.1;
 const float   kZoomSpeed   = 0.05;
 const float   _3210[4]     = {0, 1, 2, 3};
-const __m512  _151413      = _mm512_set_ps(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
-const __m512i _1_m512      = _mm512_set1_epi32(1);
 
 //==============================FUNCTIONS PROTOTIPE===============================
 static        sf::Color StepToColor(size_t step);
 static        void      ProcessSetMoving(MandelbrotParams *params);
 static        void      UpdateFpsViewer(sf::Text *fps_counter, float fps);
+static        double    CalculateFPS(size_t miliseconds);
 static inline float     GetDelta(float to, float from, size_t steps);
+static        size_t    RunVersion(sf::Image* image, MandelbrotParams* params);
 
 //==============================FOR WRAPERS======================================
 static inline void mm_set_ps1(float* A, const float  elem) {for(int i = 0; i < 4; i++) A[i] = elem;}
@@ -44,7 +44,7 @@ void DrawMandelbrotSet(MandelbrotParams params)
     image.create(params.image_width, params.image_height, sf::Color::Black);
 
     sf::Texture image_texture;
-    sf::Sprite  drawble;
+    sf::Sprite  drawable;
     sf::Text    fps_counter;
     sf::Font    font;
 
@@ -53,15 +53,9 @@ void DrawMandelbrotSet(MandelbrotParams params)
     fps_counter.setFillColor(sf::Color::White);
     fps_counter.setPosition(0, 0);
 
-    InitTimer();
-
     while (window.isOpen())
     {
-        StartTimer();
-        //ConstructMandelbrotV1(&image, &params);
-        // ConstructMandelbrotAVX512(&image, &params);
-        ConstructMandelbrotAVX512UsefulFormat(&image, &params);
-        StopTimer();
+        size_t run_miliseconds = RunVersion(&image, &params);
 
         #ifdef DRAW
             sf::Event event;
@@ -84,19 +78,39 @@ void DrawMandelbrotSet(MandelbrotParams params)
                         break;
                 }
             }
-            UpdateFpsViewer(&fps_counter, ((1/(float)(GetTimerMicroseconds())) * 1000000. * (double)kTimeCalcMandelbrotSet));
+            UpdateFpsViewer(&fps_counter, CalculateFPS(run_miliseconds));
 
             window.clear();
             image_texture.loadFromImage(image);
-            drawble.setTexture(image_texture);
+            drawable.setTexture(image_texture);
 
-            window.draw(drawble);
+            window.draw(drawable);
             window.draw(fps_counter);
             window.display();
         #else
             printf("FPS = %g\n", ((1/(float)(Get_timer_microseconds)) * 1000000));
         #endif
     }
+}
+
+size_t RunVersion(sf::Image* image, MandelbrotParams* params) {    
+    InitTimer();
+
+    StartTimer();
+    #ifdef RELEASE
+        ConstructMandelbrotV1(image, params);
+    #else 
+        #ifdef AVX256
+            ConstructMandelbrotSSE(image, params);
+        #else 
+            #ifdef AVX512
+                ConstructMandelbrotAVX512UsefulFormat(image, params);
+            #endif
+        #endif
+    #endif
+    StopTimer();
+    
+    return GetTimerMicroseconds();
 }
 
 //======================VERSION 1=====================
@@ -281,6 +295,7 @@ void ConstructMandelbrotV3(sf::Image* image, MandelbrotParams* params)
     }
 }
 
+#ifdef AVX256
 //======================VERSION 4=====================
 void ConstructMandelbrotSSE(sf::Image* image, MandelbrotParams* params)
 {
@@ -332,6 +347,14 @@ void ConstructMandelbrotSSE(sf::Image* image, MandelbrotParams* params)
         }
     }
 }
+#endif  // AVX256
+
+#ifdef AVX512
+
+#ifdef AVX512
+    const __m512  _151413      = _mm512_set_ps(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+    const __m512i _1_m512      = _mm512_set1_epi32(1);
+#endif
 
 //======================VERSION 5=====================
 void ConstructMandelbrotAVX512(sf::Image* image, MandelbrotParams* params)
@@ -463,8 +486,13 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
         }
     }
 }
+#endif // AVX512
 
 //=============================================OTHER FUNCTIONS=================================
+
+static double CalculateFPS(size_t milliseconds) {
+    return ((1/(float)(milliseconds)) * 1000000. * (double)kTimeCalcMandelbrotSet);
+}
 
 static void UpdateFpsViewer(sf::Text *fps_counter, float fps)
 {
