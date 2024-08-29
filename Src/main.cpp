@@ -1,4 +1,4 @@
-#include "Libs/DrawMandelbrot/DrawMandelbrot.h"
+#include "DrawMandelbrot/DrawMandelbrot.h"
 
 int main()
 {

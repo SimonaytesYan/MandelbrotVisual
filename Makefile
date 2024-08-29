@@ -6,30 +6,30 @@ SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 
 BIN = Exe/DrawMandelbrotSet
 
-avx512: prepare Obj/main.o
-	g++ -c $(AVX_512_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	g++ Src/main.cpp Obj/DrawMandel.o -o $(BIN) $(SFML_FLAGS)
+define link
+	g++ Obj/main.o Obj/DrawMandel.o -o $(BIN) $(SFML_FLAGS)
+endef
 
-avx256: prepare Obj/main.o 
-	g++ -c $(AVX_256_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	g++ Src/main.cpp Obj/DrawMandel.o -o $(BIN) $(SFML_FLAGS)
+avx512: prepare Obj/main.o
+	g++ -c $(AVX_512_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	$(call link)
+
+sse: prepare Obj/main.o 
+	g++ -c $(AVX_256_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	$(call link)
 
 without_simd: prepare Obj/main.o 
-	g++ -c $(RELEASE_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	g++ Obj/main.o Obj/DrawMandel.o -o $(BIN)
+	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
 
 Obj/main.o: Src/main.cpp
 	g++ -c Src/main.cpp -o Obj/main.o
 
 debug: prepare
-	g++ -c $(DEBUG_FLAGS) Src/Libs/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	g++ $(DEBUG_FLAGS) Src/main.cpp DrawMandel.o -o $(SFML_FLAGS) $(BIN)
+	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+	$(call link)
 
 run:
 	$(BIN)
-
-chat_gpt: prepare
-	g++ Src/ChatGPTVersion.cpp -o $(BIN)_Chat $(SFML_FLAGS)
 
 prepare:
 	-mkdir Obj

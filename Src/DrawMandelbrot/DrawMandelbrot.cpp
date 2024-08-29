@@ -7,7 +7,6 @@
 #include "../Stopwatch.h"
 
 #define DRAW
-//#define DEBUG
 
 //==============================TESTING CONSTS==================================
 const size_t kTimeCalcMandelbrotSet = 1;
