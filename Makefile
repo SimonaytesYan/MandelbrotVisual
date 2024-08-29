@@ -6,28 +6,35 @@ SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 
 BIN = Exe/DrawMandelbrotSet
 
-define link
+avx512: prepare Obj/main.o Obj/DrawMandelAVX512.o
+	g++ Obj/main.o Obj/DrawMandelAVX512.o -o $(BIN) $(SFML_FLAGS)
+
+sse: prepare Obj/main.o Obj/DrawMandelAVX256.o
+	g++ Obj/main.o Obj/DrawMandelAVX256.o -o $(BIN) $(SFML_FLAGS)
+
+without_simd: prepare Obj/main.o Obj/DrawMandel.o
 	g++ Obj/main.o Obj/DrawMandel.o -o $(BIN) $(SFML_FLAGS)
-endef
 
-avx512: prepare Obj/main.o
-	g++ -c $(AVX_512_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	$(call link)
-
-sse: prepare Obj/main.o 
-	g++ -c $(AVX_256_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	$(call link)
-
-without_simd: prepare Obj/main.o 
-	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	$(call link)
-
-debug: prepare
-	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
-	$(call link)
+debug: prepare Obj/mainDebug.o Obj/DrawMandelDebug.o
+	g++ $(DEBUG_FLAGS) Obj/mainDebug.o Obj/DrawMandelDebug.o -o $(BIN) $(SFML_FLAGS)
 
 Obj/main.o: Src/main.cpp
 	g++ -c Src/main.cpp -o Obj/main.o
+
+Obj/mainDebug.o: Src/main.cpp
+	g++ -c $(DEBUG_FLAGS) Src/main.cpp -o Obj/mainDebug.o
+
+Obj/DrawMandelAVX512.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+	g++ -c $(AVX_512_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelAVX512.o
+
+Obj/DrawMandelAVX256.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+	g++ -c $(AVX_256_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelAVX256.o
+
+Obj/DrawMandel.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandel.o
+
+Obj/DrawMandelDebug.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelDebug.o
 
 run:
 	$(BIN)

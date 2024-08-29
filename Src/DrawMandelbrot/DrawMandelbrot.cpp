@@ -96,18 +96,16 @@ size_t RunVersion(sf::Image* image, MandelbrotParams* params) {
     InitTimer();
 
     StartTimer();
-    #ifdef RELEASE
-        ConstructMandelbrotV1(image, params);
-    #else 
+    #ifdef AVX512
+        ConstructMandelbrotAVX512UsefulFormat(image, params);
+    #else
         #ifdef AVX256
-            printf("avx256\n");
             ConstructMandelbrotSSE(image, params);
         #else 
-            #ifdef AVX512
-                ConstructMandelbrotAVX512UsefulFormat(image, params);
-            #endif
+            ConstructMandelbrotV1(image, params);
         #endif
     #endif
+    
     StopTimer();
     
     return GetTimerMicroseconds();
@@ -491,6 +489,9 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
 //=============================================OTHER FUNCTIONS=================================
 
 static double CalculateFPS(size_t milliseconds) {
+    if (milliseconds == 0)
+        return INFINITY;
+
     return ((1/(float)(milliseconds)) * 1000000. * (double)kTimeCalcMandelbrotSet);
 }
 
