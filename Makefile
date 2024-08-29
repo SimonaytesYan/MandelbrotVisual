@@ -7,6 +7,8 @@ SFML_FLAGS  = -lsfml-graphics -lsfml-window -lsfml-system
 BIN = Exe/DrawMandelbrot
 COMMON_OBJ = Obj/main.o Obj/DrawMandelbrot.o
 
+HEADERS = Src/CalcMandelbrot/CalcMandelbrot.h Src/DrawMandelbrot/DrawMandelbrot.h Src/MandelbrotStruct.h Src/Stopwatch.h
+
 avx512: prepare $(COMMON_OBJ) Obj/CalcMandelAVX512.o
 	g++ $(COMMON_OBJ) Obj/CalcMandelAVX512.o -o $(BIN) $(SFML_FLAGS)
 
@@ -20,30 +22,30 @@ debug: prepare Obj/mainDebug.o Obj/CalcMandelDebug.o Obj/DrawMandelbrotDebug.o
 	g++ $(DEBUG_FLAGS) Obj/mainDebug.o Obj/CalcMandelDebug.o Obj/DrawMandelbrotDebug.o -o $(BIN) $(SFML_FLAGS)
 
 
-Obj/main.o: Src/main.cpp
+Obj/main.o: Src/main.cpp $(HEADERS)
 	g++ -c Src/main.cpp -o Obj/main.o
 
-Obj/mainDebug.o: Src/main.cpp
+Obj/mainDebug.o: Src/main.cpp $(HEADERS)
 	g++ -c $(DEBUG_FLAGS) Src/main.cpp -o Obj/mainDebug.o
 
 
-Obj/DrawMandelbrot.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+Obj/DrawMandelbrot.o: Src/DrawMandelbrot/DrawMandelbrot.cpp $(HEADERS)
 	g++ -c $(RELEASE_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelbrot.o
 
-Obj/DrawMandelbrotDebug.o: Src/DrawMandelbrot/DrawMandelbrot.cpp
+Obj/DrawMandelbrotDebug.o: Src/DrawMandelbrot/DrawMandelbrot.cpp $(HEADERS)
 	g++ -c $(DEBUG_FLAGS) Src/DrawMandelbrot/DrawMandelbrot.cpp -o Obj/DrawMandelbrotDebug.o
 
 
-Obj/CalcMandelAVX512.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+Obj/CalcMandelAVX512.o: Src/CalcMandelbrot/CalcMandelbrot.cpp $(HEADERS)
 	g++ -c $(AVX_512_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandelAVX512.o
 
-Obj/CalcMandelAVX256.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+Obj/CalcMandelAVX256.o: Src/CalcMandelbrot/CalcMandelbrot.cpp $(HEADERS)
 	g++ -c $(AVX_256_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandelAVX256.o
 
-Obj/CalcMandel.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+Obj/CalcMandel.o: Src/CalcMandelbrot/CalcMandelbrot.cpp $(HEADERS)
 	g++ -c $(RELEASE_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandel.o
 
-Obj/CalcMandelDebug.o: Src/CalcMandelbrot/CalcMandelbrot.cpp
+Obj/CalcMandelDebug.o: Src/CalcMandelbrot/CalcMandelbrot.cpp $(HEADERS)
 	g++ -c $(DEBUG_FLAGS) Src/CalcMandelbrot/CalcMandelbrot.cpp -o Obj/CalcMandelDebug.o
 
 
