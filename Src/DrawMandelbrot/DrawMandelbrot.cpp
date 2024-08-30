@@ -11,13 +11,13 @@ const size_t kMaxFpsStrLen   = 20;
 const char   kWindowHeader[] = "Mandelbrot set";
 
 //==============================OTHER CONSTS====================================
-const float   kMovingSpeed = 0.1;
-const float   kZoomSpeed   = 0.05;
+const double kMovingSpeed = 0.1;
+const double kZoomSpeed = 0.05;
 
 //==============================FUNCTIONS PROTOTIPE===============================
-static        void      ProcessSetMoving(MandelbrotParams *params);
-static        void      UpdateFpsViewer(sf::Text *fps_counter, float fps);
-static        double    CalculateFPS(size_t miliseconds);
+static void   ProcessSetMoving(MandelbrotParams *params);
+static void   UpdateFpsViewer(sf::Text *fps_counter, double fps);
+static double CalculateFPS(size_t miliseconds);
 
 void DrawMandelbrotSet(MandelbrotParams params)
 {
@@ -71,7 +71,7 @@ void DrawMandelbrotSet(MandelbrotParams params)
             window.draw(fps_counter);
             window.display();
         #else
-            printf("FPS = %g\n", ((1/(float)(Get_timer_microseconds)) * 1000000));
+            printf("FPS = %g\n", ((1/(double)(Get_timer_microseconds)) * 1000000));
         #endif
     }
 }
@@ -82,10 +82,10 @@ static double CalculateFPS(size_t milliseconds) {
     if (milliseconds == 0)
         return INFINITY;
 
-    return ((1/(float)(milliseconds)) * 1000000. * (double)kTimeCalcMandelbrotSet);
+    return ((1/(double)(milliseconds)) * 1000000. * (double)kTimeCalcMandelbrotSet);
 }
 
-static void UpdateFpsViewer(sf::Text *fps_counter, float fps)
+static void UpdateFpsViewer(sf::Text *fps_counter, double fps)
 {
     char fps_str[kMaxFpsStrLen] = {};
     sprintf(fps_str, "%g", fps);

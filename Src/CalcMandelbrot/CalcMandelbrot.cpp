@@ -13,7 +13,10 @@ static inline float GetDelta(float a, float b, size_t steps)
 
 static sf::Color StepToColor(size_t step)
 {
-    return sf::Color((step*7)%256, (step*3)%256, (step*5)%256);
+    if (step < 255)
+        return sf::Color(0, 0, 0);
+    return sf::Color(255, 255, 255);
+    // return sf::Color((step*7)%256, (step*3)%256, (step*5)%256);
 }
 
 //==============================LOOP WRAPPERS======================================
