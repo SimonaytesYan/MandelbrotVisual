@@ -13,7 +13,10 @@ static inline float GetDelta(float a, float b, size_t steps)
 
 static sf::Color StepToColor(size_t step)
 {
-    return sf::Color((step*7)%256, (step*3)%256, (step*5)%256);
+    if (step > 255)
+        return sf::Color(255, 255 ,255);
+    return sf::Color(0, 0, 0);
+    // return sf::Color((step*7)%256, (step*3)%256, (step*5)%256);
 }
 
 //==============================LOOP WRAPPERS======================================
@@ -381,9 +384,18 @@ void ConstructMandelbrotAVX512UsefulFormat(sf::Image* image, MandelbrotParams* p
 
                     if (_mm512_cmp_epi32_mask(cmp, VECTOR_I_CONSTANT(0), _CMP_NEQ_UQ) == 0)
                         break;
-                        
-                    X = XX - YY + X0;
-                    Y = XY + XY + Y0;
+                    
+                    // z_{n+1} = z_n^2 + 2z_n + c
+                    // X = XX - YY - X - X + X0;
+                    // Y = XY + XY + Y + Y + Y0;
+                    
+                    // z_{n+1} = z_n^3 + c
+                    // X = XX * X - VECTOR_F_CONSTANT(3) * X * YY + X0;
+                    // Y = -VECTOR_F_CONSTANT(3) * XY * Y - YY * Y + Y0;
+
+                    //z_{n+1} = z_n^4 + c
+                    X = XX * XX - VECTOR_F_CONSTANT(6) * XX * YY + YY*YY;
+                    Y = 4 * XX * X * Y - 4 * X * YY * Y;                
                 }
             }
 
